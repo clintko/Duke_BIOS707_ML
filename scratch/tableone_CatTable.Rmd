@@ -1,0 +1,66 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd("/mnt/c/Users/clint/GitRepo/Duke_BIOS707_ML")
+```
+
+
+```{r}
+## Load
+library(tableone)
+## Load Mayo Clinic Primary Biliary Cirrhosis Data
+library(survival)
+data(pbc)
+## Check variables
+head(pbc)
+```
+
+
+
+```{r}
+## Create an overall table for categorical variables
+catVars <- c("status","ascites","hepato","spiders","edema","stage")
+catTableOverall <- CreateCatTable(vars = catVars, data = pbc)
+## Simply typing the object name will invoke the print.CatTable method,
+## which will show the sample size, frequencies and percentages.
+## For 2-level variables, only the higher level is shown for simplicity
+## unless the variables are specified in the cramVars argument.
+catTableOverall
+```
+
+
+```{r}
+## If you need to show both levels for some 2-level factors, use cramVars
+print(catTableOverall, cramVars = "hepato")
+```
+
+```{r}
+## Use the showAllLevels argument to see all levels for all variables.
+print(catTableOverall, showAllLevels = TRUE)
+```
+
+```{r}
+## You can choose form frequencies ("f") and/or percentages ("p") or both.
+## "fp" frequency (percentage) is the default. Row names change accordingly.
+print(catTableOverall, format = "f")
+print(catTableOverall, format = "p")
+```
+
+
+```{r}
+## To further examine the variables, use the summary.CatTable method,
+## which will show more details.
+summary(catTableOverall)
+```
+
+```{r}
+## The table can be stratified by one or more variables
+catTableBySexTrt <- CreateCatTable(vars = catVars,
+strata = c("sex","trt"), data = pbc)
+
+```
+
+

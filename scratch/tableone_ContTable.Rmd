@@ -1,0 +1,44 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+## Load
+library(tableone)
+## Load Mayo Clinic Primary Biliary Cirrhosis Data
+library(survival)
+data(pbc)
+## Check variables
+head(pbc)
+
+```
+
+```{r}
+## Create an overall table for continuous variables
+contVars <- c("time","age","bili","chol","albumin","copper",
+"alk.phos","ast","trig","platelet","protime")
+contTableOverall <- CreateContTable(vars = contVars, data = pbc)
+```
+
+
+```{r}
+## Simply typing the object name will invoke the print.ContTable method,
+## which will show the sample size, means and standard deviations.
+contTableOverall
+```
+
+```{r}
+## To further examine the variables, use the summary.ContTable method,
+## which will show more details.
+summary(contTableOverall)
+```
+
+```{r}
+## c("age","chol","copper","alk.phos","trig","protime") appear highly skewed.
+## Specify them in the nonnormal argument, and the display changes to the median,
+## and the [25th, 75th] percentile.
+nonNormalVars <- c("age","chol","copper","alk.phos","trig","protime")
+print(contTableOverall, nonnormal = nonNormalVars)
+```
+

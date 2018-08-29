@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tableone)
+library(labelled)
+```
+
+
+```{r}
+load(url("https://www.causeweb.org/tshs/datasets/surgery_timing.Rdata"))
+head(stata_data)
+```
+
+```{r}
+summary(stata_data)
+```
+
+```{r}
+df <- stata_data
+```
+
+
+```{r}
+dput(names(df))
+```
+
+```{r}
+levels(df$asa_status) 
+```
+
+
+```{r}
+df <- stata_data
+
+## Make categorical variables factors
+varsToFactor <- c("gender", "race", "asa_status", 
+          "baseline_cancer",    # Cancer
+          "baseline_cvd",       # Cardiovascular/cerebrovascular disease 
+          "baseline_dementia",  # Dementia
+          "baseline_diabetes",  # Diabetes
+          "baseline_digestive", # Digestive disease
+          "baseline_osteoart",  # Osteoarthritis
+          "baseline_psych",     # Psychiatric disorder
+          "baseline_pulmonary") # Pulmonary disease
+          
+    
+df[varsToFactor] <- lapply(df[varsToFactor], factor)
+
+## set levels
+df$asa_status <- factor(df$asa_status, levels = c("I-II", "III", "IV-VI", ""))
+
+## set label of variables
+var_label(df$age)                <- "Age"
+var_label(df$gender)             <- "Gender"
+var_label(df$race)               <- "Race"
+var_label(df$asa_status)         <- "ASA physical status"
+var_label(df$bmi)                <- "Body mass index (kg/m^2)"
+var_label(df$baseline_cancer)    <-  "Cancer"
+var_label(df$baseline_cvd)       <- "Cardiovascular/cerebrovascular disease"
+var_label(df$baseline_dementia)  <- "Dementia"
+var_label(df$baseline_diabetes)  <- "Diabetes"
+var_label(df$baseline_digestive) <- "Digestive disease"
+var_label(df$baseline_osteoart)  <- "Osteoarthritis"
+var_label(df$baseline_psych)     <- "Psychiatric disorder"
+var_label(df$baseline_pulmonary) <- "Pulmonary disease"
+var_label(df$baseline_charlson)  <- "Charison Comorbidity Index"
+var_label(df$mortality_rsi)      <- "Risk Stratification Index (30-day mortality)"
+var_label(df$complication_rsi)   <- "Risk Stratification Index (in-hospital complications)"
+
+## Create a variable list
+vars <- c("age",                # Age
+          "gender",             # Gender
+          "race",               # Race
+          "asa_status",         # ASA physical status
+          "bmi",                # Body mass index (kg/m^2)
+          "baseline_cancer",    # Cancer
+          "baseline_cvd",       # Cardiovascular/cerebrovascular disease 
+          "baseline_dementia",  # Dementia
+          "baseline_diabetes",  # Diabetes
+          "baseline_digestive", # Digestive disease
+          "baseline_osteoart",  # Osteoarthritis
+          "baseline_psych",     # Psychiatric disorder
+          "baseline_pulmonary", # Pulmonary disease
+          "baseline_charlson",  # Charison Comorbidity Index
+          "mortality_rsi",      # Risk Stratification Index (30-day mortality)
+          "complication_rsi")   # Risk Stratification Index (in-hospital complications)
+
+## nonnormal continuous variables
+vars_nonnorm <- c("bmi", "baseline_charlson", "mortality_rsi", "complication_rsi")
+
+## Create Table 1 stratified by trt
+tableOne <- CreateTableOne(data = df, vars = vars)
+
+## Format
+print(tableOne, 
+      contDigits = 1,
+      nonnormal  = vars_nonnorm,
+      varLabels  = TRUE,
+      explain    = FALSE,
+      dropEqual  = TRUE)
+```
+

@@ -1,0 +1,31 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+## Load
+library(tableone)
+## Load Mayo Clinic Primary Biliary Cirrhosis Data
+library(survival)
+data(pbc)
+## Check variables
+head(pbc)
+## Make categorical variables factors
+varsToFactor <- c("status","trt","ascites","hepato","spiders","edema","stage")
+pbc[varsToFactor] <- lapply(pbc[varsToFactor], factor)
+## Create a variable list
+dput(names(pbc))
+vars <- c("time","status","age","sex","ascites","hepato",
+"spiders","edema","bili","chol","albumin",
+"copper","alk.phos","ast","trig","platelet",
+"protime","stage")
+## Create Table 1 stratified by trt
+tableOne <- CreateTableOne(vars = vars, strata = c("trt"), data = pbc)
+```
+
+```{r}
+## Just typing the object name will invoke the print.TableOne method
+tableOne
+```
+
