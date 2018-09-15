@@ -1,38 +1,39 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "BIOS707 | Problem Set 01"
+author: "Kuei-Yueh (Clint) Ko"
+output:
+  html_notebook: default
+  pdf_document: default
 ---
 
-```{r}
+# Set environment
+
+This report aim to recreate the table one and table two in the study *"Operation Timing and 30-Dayrtality After Elective General Surgery"*. The packages required in this report include **dplyr**, **tableone**, **labelled**.
+
+```{r, message=FALSE}
+### load required packages
+library(dplyr)
 library(tableone)
 library(labelled)
 ```
 
+# Import data
+
+The study data are available in a number of formats on the website. Load the RData object directly from the website.
 
 ```{r}
+### load R dataset
 load(url("https://www.causeweb.org/tshs/datasets/surgery_timing.Rdata"))
 head(stata_data)
 ```
 
-```{r}
-summary(stata_data)
-```
+
+# Table 01
+
+Recreate table 1 of the study. The table 1 is **the summary of baseline risk factors for 32,001 general surgical patients**.
 
 ```{r}
-df <- stata_data
-```
-
-
-```{r}
-dput(names(df))
-```
-
-```{r}
-levels(df$asa_status) 
-```
-
-
-```{r}
+## intialization
 df <- stata_data
 
 ## Make categorical variables factors
@@ -102,4 +103,75 @@ print(tableOne,
       explain    = FALSE,
       dropEqual  = TRUE)
 ```
+
+# Table 02
+
+Recreate table two of the study. The table 2 is **frequencies of case start times by hour of day, day of week, month of Year, and moon phase**.
+
+```{r}
+### initialization
+df <- stata_data
+
+### preprocess and set factor levels
+df$hour <- floor(df$hour) %>% 
+    as.character %>% 
+    sapply(., function(x){return(ifelse(x == "19", "18", x))}) %>% 
+    paste0(., ":00") %>%
+    factor(., levels = paste0(6:18, ":00"))
+
+# set week abbreviation and full name
+week_abb = c("Mon", "Tue", "Wed", "Thu", "Fri")
+week_name = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+# Day of week
+df$dow <- df$dow %>% 
+    match(., week_abb) %>%          # get the index of each element by matching abbr.
+    `[`(week_name, .) %>%           # change the element into full name
+    factor(., levels = week_name)   # specify factor level
+
+# Month of year
+df$month <- df$month %>%            
+    match(., month.abb) %>%         # get the index of each month by matching abbr.
+    `[`(month.name, .) %>%          # change the lement into full name
+    factor(., levels = month.name)  # specify factor level
+
+# moon phase
+df$moonphase <- factor(
+    df$moonphase,                   # set as a factor
+    levels = c(                     # specify factor level
+        "New Moon", 
+        "First Quarter", 
+        "Full Moon", 
+        "Last Quarter"))
+
+### set label of variables
+var_label(df$hour)      <- "Factor operation hour"
+var_label(df$dow)       <- "Day of week"
+var_label(df$month)     <- "Factor month"
+var_label(df$moonphase) <- "Phase of moon"
+
+### Create a variable list
+vars <- c("hour", "dow", "month", "moonphase") #, "mort30", "complication")
+
+### Create table two
+tableTwo <- CreateTableOne(data = df, vars = vars)
+
+## Format
+print(tableTwo, 
+      contDigits = 1,
+      varLabels  = TRUE,
+      explain    = FALSE,
+      dropEqual  = TRUE)
+```
+
+# What does adjusted probability mean in figure 3 and figure 4
+
+**Question**   
+Figures 3 and 4 report adjusted probability estimates. What were these probabilities adjusted for? Is this study reproducible based on the published article
+
+**My Answer**    
+Based on the statistical analysis in the method part, the thirty-day mortality was adjusted based on Risk Stratification Index (RSI). However, the authors did not mention clearly how and why the probability was adjusted. Instead, the authors only cited the reference of the adjusted method. Since the description is not enough for reader to replicate easily, I believe the calculation of adjusted probability estimates in the study is not reproducible.
+
+
+
 

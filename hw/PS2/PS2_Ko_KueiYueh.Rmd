@@ -1,0 +1,645 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Set environment
+
+This document is the **problem set 2** of the course BIOS707
+
+```{r, message=FALSE, warning = FALSE}
+### import library
+library(tidyverse)
+library(corrplot)
+library(scales)
+library(ICC)
+library(gridExtra)
+library(RColorBrewer)
+
+### set directory
+setwd("/mnt/c/Users/clint/GitRepo/Duke_BIOS707_ML")
+```
+
+
+
+# Simulation
+
+## 1. Missing Data
+We will explore missing data mechanisms and basic imputation strategies. Follow these steps showing your code. Don't forget to set your seeds.
+
+### (a) set your number of people 'n' to 1000
+```{r}
+N <- 1000
+```
+
+### (b, c, d) Simulation and calcualte the mean
+simulate $Z \sim N(0, 1)$ and $X \sim N(Z, 1)$. Calculate the mean of complete X 
+
+```{r}
+### initialization
+set.seed(0)
+
+### simulate a value of z
+z <- rnorm(N, mean = 0, sd = 1)
+
+### simulate a complete vector of x
+# both options result in the same results
+x_c <- rnorm(N, mean = z, sd = 1)                          # option 01
+#x_c <- sapply(z, function(x){rnorm(1, mean = x, sd = 1)}) # option 02
+
+cat("Mean(x_c): ", mean(x_c))
+```
+
+
+### (e) Set the observed X where 10% values are missing at random.  Compare observed X and complete X.
+
+```{r}
+### set 90% of x missing (observe)
+x_o <- x_c
+x_o[sample(1:N, size = 100)] <- NA
+
+
+### quick view of the simulated data
+cat("", 
+    "Meab(Z):   ", mean(z),     "\n", 
+    "SD(Z):     ", sd(z),       "\n\n",
+    
+    "Mean(x_c): ", mean(x_c),   "\n",
+    "SD(x_c):   ", sd(x_c),     "\n\n",
+    
+    "Mean(x_o): ", mean(x_o, na.rm = TRUE), "\n",
+    "SD(x_o):   ", sd(x_o,   na.rm = TRUE))
+```
+
+
+(i) **What is the missing data mechanism?**
+    - Missing completely at random
+
+    
+(ii) **Do we expect $E[X^c] = E[X^o]$**
+    - yes
+
+This equation can be support by the following results: First, from 95% CIs of the empirical (estimated) means, we know that there is no evidence to reject that the null hypothesis that the mean between complete and observed are equal. We could also reach the same conclusion using simulation. By repeat the same procedure of producing 100 z and x values, the results appear that the observed mean and complete mean distribute around the 45 degree line. 
+    
+```{r, echo = FALSE, fig.height=4, fig.width=4}
+###
+tmp_mu <- c(mean(x_c), mean(x_o, na.rm = TRUE))
+tmp_sd <- c(  sd(x_c),   sd(x_o, na.rm = TRUE))
+
+###
+df <- data.frame(
+    x    = c("X_c (complete)", "X_o (observed)"),
+    Mean = tmp_mu,
+    L    = tmp_mu - qnorm(0.975) * tmp_sd,
+    U    = tmp_mu + qnorm(0.975) * tmp_sd)#
+
+### 
+gp1 <- ggplot(df, aes(x = x, y = Mean)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymax = U, ymin = L)) +
+    ggtitle("95% CI of Mean") + 
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y  = element_text(size = 12),
+        axis.text.x  = element_text(size  = 12))
+```
+
+```{r, echo = FALSE, fig.height=5, fig.width=5}
+### function to perform simulation
+missing_data_simulation <- function(){
+    ### initialization
+    N <- 1000
+    
+    ### simulate a value of z
+    z <- rnorm(N, mean = 0, sd = 1)
+    
+    ### simulate a complete vector of x
+    x_c <- rnorm(N, mean = z, sd = 1)
+
+    ### set 90% of x missing (observe)
+    x_o <- x_c
+    x_o[sample(1:N, size = 100)] <- NA
+    
+    res <- c(mean(x_c, na.rm = TRUE), mean(x_o, na.rm = TRUE))
+    names(res) <- c("mean (complete)", "mean (observed)")
+    return(res)
+} # end func
+
+### simulate multiple times
+set.seed(0)
+df <- replicate(5000, missing_data_simulation())
+df <- data.frame(t(df))
+colnames(df) <- c("mu_Xc", "mu_Xo")
+    
+### show the result
+gp2 <- ggplot(df, aes(x = mu_Xc, y = mu_Xo)) +
+    geom_point(size = 1, alpha = 0.3) +
+    geom_abline(intercept = 0, slope = 1, color = "red") +
+    labs(title = "Simulation of complete and observed empirical mean",
+         x     = "mean (complete)", 
+         y     = "mean (observed)")
+```
+
+```{r, echo = FALSE}
+grid.arrange(gp1, gp2, nrow = 1)
+```
+
+
+(iii) Using the mean of the observed X values, impute in the missing X-values
+
+```{r}
+x_impute <- x_o
+x_impute[is.na(x_impute)] <- mean(x_o, na.rm = TRUE)
+```
+
+
+(iv) Does this change our estimate for the mean of X? Do we expect it to?
+- No, the mean is the same.
+- Yes, we expect that the mean are the same before and after the imputation, because
+
+```{r}
+cat("", 
+    "Meab(Z):        ", mean(z),                 "\n\n", 
+    "Mean(x_c):      ", mean(x_c),               "\n\n",
+    "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n\n",
+    "Mean(x_impute): ", mean(x_impute, na.rm = TRUE))
+```
+
+
+### (f) Among Z > 0, make 10% of the X values missing. Calculate the mean of this new X. Comment on any differences or similarities
+
+Among Z > 0, make 10% of the X values missing.
+```{r}
+x_o <- x_c
+x_o[sample(which(z > 0), size = 100)] <- NA
+```
+
+(i)   **What is the missing data mechanism?**
+(ii)  **Do we expect $E[X^c] = E[X^o]$**
+(iii) **Using the mean of the observed X values, impute in the missing X-values. Does this improve our estimate of the mean of X?**
+(iv)  **We will perform conditional imputation:**
+
+    - A. Using the observed X, Z pairs fit a linear regression model, regressing X onto Z. This can be thought of as a simple predictive model for X based on Z.
+    
+    
+    - B. Using this fit, generate predictive values for X, based on Z. hint: use the predict() function for lm.
+    
+    - C. Calculate new imputed mean of X. How does this compare to teh true mean of X.
+
+### (g) What would happen if in (f) we had set the missingness degree to be 100%? Would we be able to recover the true mean value?
+
+
+### Further Exploration: If you are inclined, go back to (f) and vary that percentage. At what point are we unable to recover the true value. Feel free to make any graphical results to justify your findings
+
+
+## 2. Intraclass Correlation Coefficient (ICC) THe ICC is a statistic that measures the ratio of within group to between group variance. It assess how tightly correlated
+
+The ICC is a statistic that measures the ratio of within group to between group variance. It assess how tightly correlated a measure is based on some grouping variable. It is particularly useful in longitudinal studies where patients are measured repeatedly overtime. For example we may measure blood pressure on a patients multiple times. The ICC will assess whether there is more variation within people than between people. The ICC varies between 0 - 1. A value of 1 indicates that there is more between person variation while a value of 0 indicates more within person variation (see Figure 1)
+
+There are multiple ways of defining the ICC (see http://en.wikipedia.org/wiki/Intraclass_correlation). We will use the random effects definition:
+
+$$Y_{ij} = \mu + \alpha_j + \epsilon_{ij}$$
+
+Where $Y_{ij}$ is the outcome for person $i$ in group $j$; $\alpha_j$ is a random effect shared by all people in up $j$. We assume: 
+
+- $\epsilon \sim N(0, \sigma^2_{\epsilon})$
+- $\alpha \sim N(0, \sigma^2_{\alpha})$
+- $\alpha_j \perp \epsilon_{ij}$. 
+
+Then:
+
+$$\text{ICC} = \frac{\sigma^2_{\alpha}}{\sigma^2_{\alpha} + \sigma^2_{\epsilon}}$$
+
+(a) Using the random effects definition of an ICC, write a function that simulates data with a user specified ICC. The function should take as arguments a way to specify the desired ICC, a total sample size and the number of groups. You can allow the groups be of the same size. Show your function code.
+
+$$\text{ICC} = \frac{\sigma^2_{\alpha}}{\sigma^2_{\alpha} + \sigma^2_{\epsilon}}$$
+
+$$\frac{1}{\text{ICC}} = \frac{\sigma^2_{\alpha} + \sigma^2_{\epsilon}}{\sigma^2_{\alpha}} = 1 + \frac{\sigma^2_{\epsilon}}{\sigma^2_{\alpha}}$$
+
+$$\frac{1}{\text{ICC}} - 1 = \frac{\sigma^2_{\epsilon}}{\sigma^2_{\alpha}}$$
+
+$$\sigma^2_{\epsilon} = \sigma^2_{\alpha} \Big( \frac{1}{\text{ICC}} - 1 \Big) $$
+
+```{r}
+simulate_icc <- function(icc, grp_size = 10, n_grp = 5, mu_tot = 0, sig2_a = 1){
+    #
+    # 
+    #=================================
+    
+    ###
+    sig2_e <- sig2_a * (1 / icc - 1)
+    alpha <- rnorm(n_grp, mean = 0, sd = sig2_a^0.5)
+    
+    ###
+    df <- sapply(mu_tot + alpha, function(x){
+        eps <- rnorm(grp_size, mean = 0, sd = sig2_e^0.5)
+        return(x + eps)
+    })
+
+    ###
+    df <- data.frame(df)
+    colnames(df) <- paste("Grp", 1:n_grp)
+
+    ###
+    df <- df %>% gather(Group, Value)
+    return(df)
+} # end func
+```
+
+
+(b) **Simulate data that has a theoretical ICC of 0.1 and 0.9 across k = 10 groups using a total sample size of n = 100. Use the R function ICCest() in the ICC package to estimate your empirical ICC and 95% confidence interval.**
+
+```{r, fig.width = 10, fig.height = 4}
+###
+K          <- 10
+N          <- 100
+ICC1       <- 0.1
+ICC2       <- 0.9
+SIG2_ALPHA <- 10
+
+###
+df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df1$ICC <- paste("ICC", "=", ICC1)
+
+###
+df2 <- simulate_icc(ICC2, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df2$ICC <- paste("ICC", "=", ICC2)
+
+###
+df  <- bind_rows(df1, df2)
+df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
+
+###
+gp <- ggplot(df, aes(x = Group, y = Value, color = Group)) + 
+    geom_jitter(width = 0.2) +
+    ggtitle("Simulating random effects with different ICC") +
+    theme(
+        axis.title.y = element_text(size = 15),
+        axis.title.x = element_text(size = 15),
+        axis.text.x  = element_text(size = 12, angle = 90, vjust = 0.5),
+        strip.text.x = element_text(size = 20, color = "grey30")) +
+    facet_wrap(~ICC)
+print(gp)
+```
+
+
+
+```{r, fig.width = 3, fig.height = 5}
+###
+res_icc01 <- ICCest(x = Group, y = Value, data = df1)
+res_icc02 <- ICCest(x = Group, y = Value, data = df2)
+
+###
+df <- data.frame(
+    x = c("ICC = 0.1", "ICC = 0.9"),
+    y = c(res_icc01$ICC,     res_icc02$ICC),
+    L = c(res_icc01$LowerCI, res_icc02$LowerCI),
+    U = c(res_icc01$UpperCI, res_icc02$UpperCI))
+
+### 
+gp <- ggplot(df, aes(x = x, y = y)) +
+    geom_point(size = 2) +
+    geom_errorbar(aes(ymax = U, ymin = L)) +
+    ylim(0, 1) + 
+    ggtitle("95% CI of ICC") + 
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y  = element_text(size = 12),
+        axis.text.x  = element_text(size  = 12))
+print(gp)
+```
+
+
+(c) **Repeat using a total sample size = of n = 1000**
+
+```{r}
+###
+K          <- 10
+N          <- 1000
+ICC1       <- 0.1
+ICC2       <- 0.9
+SIG2_ALPHA <- 10
+
+###
+df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df1$ICC <- paste("ICC", "=", ICC1)
+
+###
+df2 <- simulate_icc(ICC2, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df2$ICC <- paste("ICC", "=", ICC2)
+
+
+###
+df  <- bind_rows(df1, df2)
+df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
+
+###
+gp <- ggplot(df, aes(x = Group, y = Value, color = Group)) + 
+    geom_jitter(width = 0.2) +
+    ggtitle("Simulating random effects with different ICC") +
+    theme(
+        axis.title.y = element_text(size = 15),
+        axis.title.x = element_text(size = 15),
+        axis.text.x  = element_text(size = 12, angle = 90, vjust = 0.5),
+        strip.text.x = element_text(size = 20, color = "grey30")) +
+    facet_wrap(~ICC)
+print(gp)
+```
+
+```{r, fig.width = 3, fig.height = 5}
+###
+res_icc01 <- ICCest(x = Group, y = Value, data = df1)
+res_icc02 <- ICCest(x = Group, y = Value, data = df2)
+
+###
+df <- data.frame(
+    x = c("ICC = 0.1", "ICC = 0.9"),
+    y = c(res_icc01$ICC,     res_icc02$ICC),
+    L = c(res_icc01$LowerCI, res_icc02$LowerCI),
+    U = c(res_icc01$UpperCI, res_icc02$UpperCI))
+
+### 
+gp <- ggplot(df, aes(x = x, y = y)) +
+    geom_point(size = 2) +
+    geom_errorbar(aes(ymax = U, ymin = L)) +
+    ylim(0, 1) + 
+    ggtitle("95% CI of ICC") + 
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y  = element_text(size = 12),
+        axis.text.x  = element_text(size  = 12))
+print(gp)
+```
+
+
+(d) **Keep the sample size at n = 1000 but increase the number o fgroups to k = 100**
+```{r}
+###
+K          <- 100
+N          <- 1000
+ICC1       <- 0.1
+ICC2       <- 0.9
+SIG2_ALPHA <- 10
+
+###
+df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df1$ICC <- paste("ICC", "=", ICC1)
+
+###
+df2 <- simulate_icc(ICC2, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df2$ICC <- paste("ICC", "=", ICC2)
+
+###
+df  <- bind_rows(df1, df2)
+df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
+```
+
+
+
+```{r, fig.width = 3, fig.height = 5}
+###
+res_icc01 <- ICCest(x = Group, y = Value, data = df1)
+res_icc02 <- ICCest(x = Group, y = Value, data = df2)
+
+###
+df <- data.frame(
+    x = c("ICC = 0.1", "ICC = 0.9"),
+    y = c(res_icc01$ICC,     res_icc02$ICC),
+    L = c(res_icc01$LowerCI, res_icc02$LowerCI),
+    U = c(res_icc01$UpperCI, res_icc02$UpperCI))
+
+### 
+gp <- ggplot(df, aes(x = x, y = y)) +
+    geom_point(size = 2) +
+    geom_errorbar(aes(ymax = U, ymin = L)) +
+    ylim(0, 1) + 
+    ggtitle("95% CI of ICC") + 
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12),
+        axis.text.x  = element_text(size = 12))
+    
+print(gp)
+```
+
+(e) Comment on differences in the precision of your estimate based on k and n. Graphically display your results. Feel free to do more testing to justify your conclusions.
+
+
+# Working With Data
+
+Download the Diabetes data set from the UCI Machine Learning Repository:
+https://archive.ics.uci.edu/ml/datasets/Diabetes
+
+```{r}
+datadir <- "Diabetes-Data"
+dir(datadir)
+```
+
+```{r}
+system("head -6 Diabetes-Data/data-01", intern = TRUE)
+```
+
+**Format of the data**  
+
+1. Date in MM-DD-YYYY format  
+2. Time in XX:YY format  
+3. Code  
+4. Value  
+
+**Data code**  
+
+- 33 = Regular insulin dose  
+- 34 = NPH insulin dose  
+- 35 = UltraLente insulin dose  
+- 48 = Unspecified blood glucose measurement  
+- 57 = Unspecified blood glucose measurement  
+- 58 = Pre-breakfast blood glucose measurement  
+- 59 = Post-breakfast blood glucose measurement  
+- 60 = Pre-lunch blood glucose measurement  
+- 61 = Post-lunch blood glucose measurement  
+- 62 = Pre-supper blood glucose measurement  
+- 63 = Post-supper blood glucose measurement 
+- 64 = Pre-snack blood glucose measurement 
+- 65 = Hypoglycemic symptoms  
+- 66 = Typical meal ingestion  
+- 67 = More-than-usual meal ingestion  
+- 68 = Less-than-usual meal ingestion  
+- 69 = Typical exercise activity  
+- 70 = More-than-usual exercise activity  
+- 71 = Less-than-usual exercise activity  
+- 72 = Unspecified special event  
+
+**Choose one person**
+```{r}
+### choose the first person
+filename <- "data-01"
+```
+
+## Summarizing Data
+
+import Diabetes data
+```{r}
+###
+coltypes <- list(
+    col_date(format = "%m-%d-%Y"),
+    col_time(format = "%H:%M"),
+    col_integer(),
+    col_integer())
+
+###
+dat_raw <- read_delim(
+    file.path(datadir, filename), 
+    delim = "\t", 
+    col_names = FALSE,
+    col_types = coltypes) %>%
+    `colnames<-`(c("date", "time", "code", "value"))
+
+###
+head(dat_raw)
+```
+
+(a) Select the 3 pre-meal blood glucose measurements (codes 58, 60, 62). Create a table reporting any relevant summary statistics. Provide any interpretation.
+
+- 58 = Pre-breakfast blood glucose measurement  
+- 60 = Pre-lunch blood glucose measurement  
+- 62 = Pre-supper blood glucose measurement  
+```{r}
+
+###
+tmp <-  c("Pre-breakfast\nblood glucose measurement",
+          "Pre-lunch\nblood glucose measurement",  
+          "Pre-supper\nblood glucose measurement")
+
+tmp <-  data.frame(
+            code      = c(58, 60, 62), 
+            code_name = tmp)
+
+dat <- dat_raw
+dat <- dat %>% 
+    filter(code %in% c(58, 60, 62)) %>%
+    inner_join(., tmp, by = "code")
+
+#df %>% group_by(code) %>% summarize(
+#    Mean = mean(value),
+#    SD   = sd(value))
+dat$code_name <- factor(dat$code_name, levels = tmp$code_name)
+```
+
+
+```{r}
+gp <- ggplot(dat, aes(x = code_name, y = value, group = code_name))
+gp <- gp +
+    geom_boxplot() + 
+    geom_jitter(width = 0.2, alpha = 0.5) +
+    labs(x = "", y = "Value", 
+         title = "Pre-meal Blood Glucose (BG) Measurements") +
+    theme(axis.title.y = element_text(size = 12),
+          axis.text.x  = element_text(size = 10))
+print(gp)
+```
+
+```{r}
+res_icc
+
+```
+
+
+```{r}
+df
+```
+
+
+```{r, fig.width = 3, fig.height = 4}
+res_icc <- ICCest(x = code_name, y = value, data = dat)
+df <- data.frame(
+    x = "ICC of Three Pre-meal\nBG Measurements",
+    y = res_icc$ICC,
+    L = res_icc$LowerCI,
+    U = res_icc$UpperCI)
+
+### 
+gp <- ggplot(df, aes(x = x, y = y)) +
+    geom_point(size = 2) +
+    geom_errorbar(aes(ymax = U, ymin = L)) +
+    ggtitle(paste("ICC =", round(res_icc$ICC, 2))) + 
+    ylim(-0.1, 1.0) +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 12),
+        axis.text.x  = element_text(size = 12))
+    
+print(gp)
+```
+
+There is not much variation between groups
+
+
+## 2. Working with Dates
+
+
+(a) Choose an appropriate plot to display the 3 blood glucose measurements over time
+
+```{r}
+head(dat)
+```
+
+```{r}
+df <- dat
+df <- df %>% mutate(datetime = paste(date, time))
+df$datetime <- parse_datetime(
+    df$datetime, 
+    format = "%Y-%m-%d %H:%M:%S")
+head(df)
+```
+
+```{r}
+class(df$datetime[1])
+```
+
+
+```{r}
+parse_datetime(df$datetime[1], format = "%Y-%m-%d %H:%M:%S")
+```
+
+
+```{r}
+gp <- ggplot(df, aes(x = datetime, y = value, color = code_name))
+gp <- gp +
+    geom_line()
+print(gp)
+```
+
+```{r}
+tmp <- df %>% group_by(date, code_name) %>% summarize(Mean = mean(value))
+tmp <- tmp %>% spread(code_name, Mean)
+head(tmp)
+```
+
+```{r}
+tmp2 <- tmp %>% as.data.frame %>% dplyr::select(-date) %>% na.omit %>% as.matrix
+colnames(tmp2)
+```
+
+```{r}
+head(tmp2)
+```
+
+```{r}
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors
+```
+
+
+
+```{r, fig.width = 10, fig.height = 10}
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors = rev(colors)
+colors = colorRampPalette(colors)(100)
+
+M <- cor(tmp2)
+corrplot.mixed(
+    M, lower.col = colors, upper.col = colors)
+```
+
+
+(d) One version of single imputation appropriate for longitudinal data is called
