@@ -1,25 +1,32 @@
 ---
-title: "R Notebook"
+title: "BIOS707 | Problem set2"
+author: Kuei-Yueh (Clint) Ko
 output: html_notebook
 ---
 
-# Set environment
+# background
 
-This document is the **problem set 2** of the course BIOS707
+This document is the **problem set 2** of the course BIOS707. The code chunk below includes the library needed and the setting of working directory
 
+Set environment
 ```{r, message=FALSE, warning = FALSE}
 ### import library
+# tools
 library(tidyverse)
-library(corrplot)
 library(scales)
 library(ICC)
+library(zoo)
+
+# plotting
 library(gridExtra)
 library(RColorBrewer)
+library(corrplot)
 
-### set directory
-setwd("/mnt/c/Users/clint/GitRepo/Duke_BIOS707_ML")
+### set directory (remember to set your working directory)
+workdir <- "/home/clint/GitRepo/Duke_BIOS707_ML/hw/PS2" 
+#workdir <- "/mnt/c/Users/clint/GitRepo/Duke_BIOS707_ML"
+setwd(workdir)
 ```
-
 
 
 # Simulation
@@ -51,8 +58,9 @@ cat("Mean(x_c): ", mean(x_c))
 ```
 
 
-### (e) Set the observed X where 10% values are missing at random.  Compare observed X and complete X.
+### (e) Make 10% of the X  values missing. Calculate  the mean of this new X. Comment on any differences or similarities 
 
+Set the observed X where 10% values are missing at random.  Compare observed X and complete X.
 ```{r}
 ### set 90% of x missing (observe)
 x_o <- x_c
@@ -73,16 +81,16 @@ cat("",
 
 
 (i) **What is the missing data mechanism?**
-    - Missing completely at random
+    - Missing completely at random (MCAR)
 
     
 (ii) **Do we expect $E[X^c] = E[X^o]$**
-    - yes
+    - yes, below are two arguments that support the equation.
 
 This equation can be support by the following results: First, from 95% CIs of the empirical (estimated) means, we know that there is no evidence to reject that the null hypothesis that the mean between complete and observed are equal. We could also reach the same conclusion using simulation. By repeat the same procedure of producing 100 z and x values, the results appear that the observed mean and complete mean distribute around the 45 degree line. 
     
 ```{r, echo = FALSE, fig.height=4, fig.width=4}
-###
+### compute 95% CI
 tmp_mu <- c(mean(x_c), mean(x_o, na.rm = TRUE))
 tmp_sd <- c(  sd(x_c),   sd(x_o, na.rm = TRUE))
 
@@ -105,6 +113,7 @@ gp1 <- ggplot(df, aes(x = x, y = Mean)) +
 ```
 
 ```{r, echo = FALSE, fig.height=5, fig.width=5}
+### simulate complete and observed data
 ### function to perform simulation
 missing_data_simulation <- function(){
     ### initialization
@@ -154,42 +163,203 @@ x_impute[is.na(x_impute)] <- mean(x_o, na.rm = TRUE)
 
 
 (iv) Does this change our estimate for the mean of X? Do we expect it to?
-- No, the mean is the same.
-- Yes, we expect that the mean are the same before and after the imputation, because
+    - No, the mean is the same.
+    - Yes, we expect that the mean are the same before and after the imputation.
 
 ```{r}
 cat("", 
-    "Meab(Z):        ", mean(z),                 "\n\n", 
-    "Mean(x_c):      ", mean(x_c),               "\n\n",
-    "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n\n",
+    "Meab(Z):        ", mean(z),                 "\n", 
+    "Mean(x_c):      ", mean(x_c),               "\n",
+    "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n",
     "Mean(x_impute): ", mean(x_impute, na.rm = TRUE))
 ```
 
+```{r}
+res_test <- t.test(x_c, x_o)
+res_test$conf.int
+```
 
-### (f) Among Z > 0, make 10% of the X values missing. Calculate the mean of this new X. Comment on any differences or similarities
+```{r}
+res_test <- t.test(x_c, x_impute)
+res_test$conf.int
+```
+
+### (f) Return to your complete data. Among Z > 0, make 10% of the X values missing. Calculate the mean of this new X. Comment on any differences or similarities
 
 Among Z > 0, make 10% of the X values missing.
 ```{r}
+### set seed
+set.seed(0)
+
+### set missing values
 x_o <- x_c
-x_o[sample(which(z > 0), size = 100)] <- NA
+idx <- which(z > 0)
+x_o[sample(idx, size = floor(length(idx) * 0.1))] <- NA
 ```
 
 (i)   **What is the missing data mechanism?**
+    - Missing at Random (MAR)
+
+
 (ii)  **Do we expect $E[X^c] = E[X^o]$**
+    - No, but it is conditionally the same
+
+```{r}
+cat("", 
+    "Mean(x_c):      ", mean(x_c),               "\n",
+    "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n",
+    "Mean(x_c|Z > 0):", mean(x_c[z > 0], na.rm = TRUE), "\n",
+    "Mean(x_o|Z > 0):", mean(x_o[z > 0], na.rm = TRUE), "\n",
+    "Mean(x_c|Z < 0):", mean(x_c[z < 0], na.rm = TRUE), "\n",
+    "Mean(x_o|Z < 0):", mean(x_o[z < 0], na.rm = TRUE), "\n")
+```
+
+Support my answer using t-test  
+```{r}
+res_test1 <- t.test(x_c, x_o)
+res_test2 <- t.test(x_c[z > 0], x_o[z > 0])
+res_test3 <- t.test(x_c[z < 0], x_o[z < 0])
+
+cat("Compare E[X_complete] vs E[X_observed]: \n\t", 
+    "p-value:", res_test1$p.value, "\n",
+    "Compare E[X_complete | Z > 0] vs E[X_observed | Z > 0]: \n\t", 
+    "p-value:", res_test2$p.value, "\n", 
+    "Compare E[X_complete | Z < 0] vs E[X_complete | Z < 0]: \n\t", 
+    "p-value:", res_test3$p.value)
+```
+
+At 95% level, the p value of testing $E[X^c] = E[X^o]$ is very close to the threshold to reject the null, while comparing $E[X^c | Z > 0] = E[X^o | Z > 0]$ and comparing $E[X^c | Z < 0] = E[X^o | Z < 0]$, we definitely not reject the null since p value is much larger than 0.05. 
+
+
 (iii) **Using the mean of the observed X values, impute in the missing X-values. Does this improve our estimate of the mean of X?**
+    - No
+
+```{r}
+x_impute <- x_o
+x_impute[is.na(x_impute)] <- mean(x_o, na.rm = TRUE)
+
+cat("", 
+    "Meab(Z):        ", mean(z),                 "\n", 
+    "Mean(x_c):      ", mean(x_c),               "\n",
+    "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n",
+    "Mean(x_impute): ", mean(x_impute, na.rm = TRUE))
+```
+
+Support my answer using t-test  
+```{r}
+res_test1 <- t.test(x_c, x_o)
+res_test2 <- t.test(x_c, x_impute)
+
+cat("Compare E[X_complete] vs E[X_observed]: \n\t", 
+    "p-value:", res_test1$p.value, "\n",
+    "Compare E[X_complete] vs E[X_imputed]: \n\t", 
+    "p-value:", res_test2$p.value)
+```
+
+At 95% level, the p value of testing $E[X^c] = E[X^o]$ and $E[X^c] = E[X^impute]$ are both very close to the threshold to reject the null.
+
 (iv)  **We will perform conditional imputation:**
 
     - A. Using the observed X, Z pairs fit a linear regression model, regressing X onto Z. This can be thought of as a simple predictive model for X based on Z.
     
-    
+```{r}
+fit <- lm(x_o ~ z)
+print(fit)
+```
+
     - B. Using this fit, generate predictive values for X, based on Z. hint: use the predict() function for lm.
+
+```{r}
+x_pred <- predict(fit, newdata = list(z))
+```
     
-    - C. Calculate new imputed mean of X. How does this compare to teh true mean of X.
+
+    - C. Calculate new imputed mean of X. How does this compare to the true mean of X.
+        - The predicted mean is the same as imputed mean. From the t-test, ????
+```{r}
+cat("", 
+    "Mean(x_c):      ", mean(x_c),                  "\n",
+    "Mean(x_o):      ", mean(x_o,    na.rm = TRUE), "\n",
+    "Mean(x_pred):   ", mean(x_pred, na.rm = TRUE))
+```
+
+```{r}
+res_test1 <- t.test(x_c, x_o)
+res_test2 <- t.test(x_c, x_pred)
+
+cat("Compare E[X_complete] vs E[X_observed]: \n\t", 
+    "p-value:", res_test1$p.value, "\n",
+    "Compare E[X_complete] vs E[X_predicted]: \n\t", 
+    "p-value:", res_test2$p.value)
+```
 
 ### (g) What would happen if in (f) we had set the missingness degree to be 100%? Would we be able to recover the true mean value?
 
+remove all z > 0
+```{r}
+### set missing values
+x_o <- x_c
+idx <- which(z > 0)
+x_o[idx] <- NA
+```
+
+impute the missing value from the regression model
+```{r}
+fit <- lm(x_o ~ z)
+x_pred <- predict(fit, newdata = list(z))
+```
+
+The results of the t-test can be used as an evidence to show that the value could be recovered even we had set the missingness degree to be 100% (remove 100% of value where z > 0).
+```{r}
+res_test1 <- t.test(x_c, x_o)
+res_test2 <- t.test(x_c, x_pred)
+
+cat("Compare E[X_complete] vs E[X_observed]: \n\t", 
+    "p-value:", res_test1$p.value, "\n",
+    "Compare E[X_complete] vs E[X_predicted]: \n\t", 
+    "p-value:", res_test2$p.value)
+```
 
 ### Further Exploration: If you are inclined, go back to (f) and vary that percentage. At what point are we unable to recover the true value. Feel free to make any graphical results to justify your findings
+
+????
+```{r}
+### set seed
+set.seed(0)
+
+### set missing values
+idx  <- which(z > 0)
+
+### initialization
+percentage <- seq(from = 0.1, to = 1, by = 0.1)
+
+### simulation
+simulation <- function(){
+    res <- sapply(percentage, function(p){
+        pval <- c()
+        x_o  <- x_c
+        x_o[sample(idx, size = floor(length(idx) * p))] <- NA
+        fit <- lm(x_o ~ z)
+        x_pred <- predict(fit, newdata = list(z))
+
+        res_test <- t.test(x_c, x_pred)
+        pval <- c(pval, res_test$p.value)
+        return(pval)
+    }) # end sapply
+    return(res)
+} # end function
+
+res_pval <- t(replicate(50, simulation()))
+colnames(res_pval) <- percentage
+res_pval <- res_pval %>% 
+    as.data.frame %>% 
+    gather(percentage, value) %>% 
+    group_by(percentage) %>% 
+    summarise(Mean = mean(value))
+
+### show the results
+plot(res_pval$percentage, res_pval$Mean)
+```
 
 
 ## 2. Intraclass Correlation Coefficient (ICC) THe ICC is a statistic that measures the ratio of within group to between group variance. It assess how tightly correlated
@@ -210,7 +380,7 @@ Then:
 
 $$\text{ICC} = \frac{\sigma^2_{\alpha}}{\sigma^2_{\alpha} + \sigma^2_{\epsilon}}$$
 
-(a) Using the random effects definition of an ICC, write a function that simulates data with a user specified ICC. The function should take as arguments a way to specify the desired ICC, a total sample size and the number of groups. You can allow the groups be of the same size. Show your function code.
+(a) **Using the random effects definition of an ICC, write a function that simulates data with a user specified ICC. The function should take as arguments a way to specify the desired ICC, a total sample size and the number of groups. You can allow the groups be of the same size. Show your function code.**
 
 $$\text{ICC} = \frac{\sigma^2_{\alpha}}{\sigma^2_{\alpha} + \sigma^2_{\epsilon}}$$
 
@@ -222,25 +392,26 @@ $$\sigma^2_{\epsilon} = \sigma^2_{\alpha} \Big( \frac{1}{\text{ICC}} - 1 \Big) $
 
 ```{r}
 simulate_icc <- function(icc, grp_size = 10, n_grp = 5, mu_tot = 0, sig2_a = 1){
-    #
-    # 
-    #=================================
+    # function to simuate the data from specific ICC
+    # =================================
     
-    ###
+    ### calculate sig2_e from the ICC and sig2_a
     sig2_e <- sig2_a * (1 / icc - 1)
-    alpha <- rnorm(n_grp, mean = 0, sd = sig2_a^0.5)
     
-    ###
+    ### simulate alpha by sig2_a
+    alpha  <- rnorm(n_grp, mean = 0, sd = sig2_a^0.5)
+    
+    ### simulate error for each group by sig2_e
     df <- sapply(mu_tot + alpha, function(x){
         eps <- rnorm(grp_size, mean = 0, sd = sig2_e^0.5)
         return(x + eps)
     })
 
-    ###
+    ### set column names
     df <- data.frame(df)
     colnames(df) <- paste("Grp", 1:n_grp)
 
-    ###
+    ### gather and return
     df <- df %>% gather(Group, Value)
     return(df)
 } # end func
@@ -255,7 +426,7 @@ K          <- 10
 N          <- 100
 ICC1       <- 0.1
 ICC2       <- 0.9
-SIG2_ALPHA <- 10
+SIG2_ALPHA <- 1
 
 ###
 df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
@@ -283,24 +454,24 @@ print(gp)
 ```
 
 
-
-```{r, fig.width = 3, fig.height = 5}
-###
+Use the R function ICCest() in the ICC package to estimate the empirical ICC and 95% confidence interval
+```{r, echo = FALSE, fig.width = 3, fig.height = 5}
+### calculate ICC for two ICC = 0.1 and ICC = 0.9
 res_icc01 <- ICCest(x = Group, y = Value, data = df1)
 res_icc02 <- ICCest(x = Group, y = Value, data = df2)
 
-###
+### arrange results
 df <- data.frame(
     x = c("ICC = 0.1", "ICC = 0.9"),
     y = c(res_icc01$ICC,     res_icc02$ICC),
     L = c(res_icc01$LowerCI, res_icc02$LowerCI),
     U = c(res_icc01$UpperCI, res_icc02$UpperCI))
 
-### 
+### plot 95% CI
 gp <- ggplot(df, aes(x = x, y = y)) +
     geom_point(size = 2) +
     geom_errorbar(aes(ymax = U, ymin = L)) +
-    ylim(0, 1) + 
+    ylim(-0.1, 1) + 
     ggtitle("95% CI of ICC") + 
     theme(
         axis.title.x = element_blank(),
@@ -313,27 +484,26 @@ print(gp)
 (c) **Repeat using a total sample size = of n = 1000**
 
 ```{r}
-###
+### initialization
 K          <- 10
 N          <- 1000
 ICC1       <- 0.1
 ICC2       <- 0.9
-SIG2_ALPHA <- 10
+SIG2_ALPHA <- 1
 
-###
+### simulation of ICC1 = 0.1
 df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
 df1$ICC <- paste("ICC", "=", ICC1)
 
-###
+### simulation of ICC2 = 0.9
 df2 <- simulate_icc(ICC2, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
 df2$ICC <- paste("ICC", "=", ICC2)
 
-
-###
+### combine the results
 df  <- bind_rows(df1, df2)
 df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
 
-###
+### plot the results
 gp <- ggplot(df, aes(x = Group, y = Value, color = Group)) + 
     geom_jitter(width = 0.2) +
     ggtitle("Simulating random effects with different ICC") +
@@ -346,23 +516,24 @@ gp <- ggplot(df, aes(x = Group, y = Value, color = Group)) +
 print(gp)
 ```
 
-```{r, fig.width = 3, fig.height = 5}
-###
+plot the 95% CI
+```{r, echo = FALSE,  fig.width = 3, fig.height = 5}
+### calculate ICC for two ICC = 0.1 and ICC = 0.9
 res_icc01 <- ICCest(x = Group, y = Value, data = df1)
 res_icc02 <- ICCest(x = Group, y = Value, data = df2)
 
-###
+### arrange the results
 df <- data.frame(
     x = c("ICC = 0.1", "ICC = 0.9"),
     y = c(res_icc01$ICC,     res_icc02$ICC),
     L = c(res_icc01$LowerCI, res_icc02$LowerCI),
     U = c(res_icc01$UpperCI, res_icc02$UpperCI))
 
-### 
+### plot the results
 gp <- ggplot(df, aes(x = x, y = y)) +
     geom_point(size = 2) +
     geom_errorbar(aes(ymax = U, ymin = L)) +
-    ylim(0, 1) + 
+    ylim(-0.1, 1) + 
     ggtitle("95% CI of ICC") + 
     theme(
         axis.title.x = element_blank(),
@@ -372,20 +543,20 @@ print(gp)
 ```
 
 
-(d) **Keep the sample size at n = 1000 but increase the number o fgroups to k = 100**
+(d) **Keep the sample size at n = 1000 but increase the number of groups to k = 100**
 ```{r}
-###
+### initialization
 K          <- 100
 N          <- 1000
 ICC1       <- 0.1
 ICC2       <- 0.9
 SIG2_ALPHA <- 10
 
-###
+### simulation of ICC1 = 0.1 
 df1 <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
 df1$ICC <- paste("ICC", "=", ICC1)
 
-###
+### simulation of ICC1 = 0.9
 df2 <- simulate_icc(ICC2, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
 df2$ICC <- paste("ICC", "=", ICC2)
 
@@ -394,21 +565,20 @@ df  <- bind_rows(df1, df2)
 df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
 ```
 
-
-
-```{r, fig.width = 3, fig.height = 5}
-###
+plot the 95% CI
+```{r, echo = FALSE, fig.width = 3, fig.height = 5}
+### calculate ICC for two ICC = 0.1 and ICC = 0.9
 res_icc01 <- ICCest(x = Group, y = Value, data = df1)
 res_icc02 <- ICCest(x = Group, y = Value, data = df2)
 
-###
+### arrange the results
 df <- data.frame(
     x = c("ICC = 0.1", "ICC = 0.9"),
     y = c(res_icc01$ICC,     res_icc02$ICC),
     L = c(res_icc01$LowerCI, res_icc02$LowerCI),
     U = c(res_icc01$UpperCI, res_icc02$UpperCI))
 
-### 
+### plot 95% CI
 gp <- ggplot(df, aes(x = x, y = y)) +
     geom_point(size = 2) +
     geom_errorbar(aes(ymax = U, ymin = L)) +
@@ -422,7 +592,11 @@ gp <- ggplot(df, aes(x = x, y = y)) +
 print(gp)
 ```
 
+
 (e) Comment on differences in the precision of your estimate based on k and n. Graphically display your results. Feel free to do more testing to justify your conclusions.
+
+**my answer**
+As the number of groups increase, the standard error of ICC decreases.
 
 
 # Working With Data
@@ -432,10 +606,6 @@ https://archive.ics.uci.edu/ml/datasets/Diabetes
 
 ```{r}
 datadir <- "Diabetes-Data"
-dir(datadir)
-```
-
-```{r}
 system("head -6 Diabetes-Data/data-01", intern = TRUE)
 ```
 
@@ -475,18 +645,18 @@ system("head -6 Diabetes-Data/data-01", intern = TRUE)
 filename <- "data-01"
 ```
 
-## Summarizing Data
+## Q1. Summarizing Data
 
 import Diabetes data
 ```{r}
-###
+### specify the type of each columns
 coltypes <- list(
     col_date(format = "%m-%d-%Y"),
     col_time(format = "%H:%M"),
     col_integer(),
     col_integer())
 
-###
+### import data
 dat_raw <- read_delim(
     file.path(datadir, filename), 
     delim = "\t", 
@@ -494,7 +664,7 @@ dat_raw <- read_delim(
     col_types = coltypes) %>%
     `colnames<-`(c("date", "time", "code", "value"))
 
-###
+### observe
 head(dat_raw)
 ```
 
@@ -504,8 +674,7 @@ head(dat_raw)
 - 60 = Pre-lunch blood glucose measurement  
 - 62 = Pre-supper blood glucose measurement  
 ```{r}
-
-###
+### initialization (set code_name)
 tmp <-  c("Pre-breakfast\nblood glucose measurement",
           "Pre-lunch\nblood glucose measurement",  
           "Pre-supper\nblood glucose measurement")
@@ -514,20 +683,27 @@ tmp <-  data.frame(
             code      = c(58, 60, 62), 
             code_name = tmp)
 
-dat <- dat_raw
-dat <- dat %>% 
+### get data with code 58, 60, 62 (pre-meal blood glucose measurements)
+df <- dat_raw
+df <- df %>% 
     filter(code %in% c(58, 60, 62)) %>%
     inner_join(., tmp, by = "code")
 
-#df %>% group_by(code) %>% summarize(
-#    Mean = mean(value),
-#    SD   = sd(value))
-dat$code_name <- factor(dat$code_name, levels = tmp$code_name)
+### specify factor levels of code_name
+df$code_name <- factor(df$code_name, levels = tmp$code_name)
+
+### add datetime
+df <- df %>% mutate(datetime = paste(date, time))
+df$datetime <- parse_datetime(
+    df$datetime, 
+    format = "%Y-%m-%d %H:%M:%S")
+
+dat_datetime <- df
 ```
 
-
+plot the distribution
 ```{r}
-gp <- ggplot(dat, aes(x = code_name, y = value, group = code_name))
+gp <- ggplot(dat_datetime, aes(x = code_name, y = value, group = code_name))
 gp <- gp +
     geom_boxplot() + 
     geom_jitter(width = 0.2, alpha = 0.5) +
@@ -538,19 +714,10 @@ gp <- gp +
 print(gp)
 ```
 
-```{r}
-res_icc
-
-```
-
-
-```{r}
-df
-```
-
+It seems that the blood glucose measurement is a little bit lower during the pre-lunch comparing to pre-breakfast and pre-supper.
 
 ```{r, fig.width = 3, fig.height = 4}
-res_icc <- ICCest(x = code_name, y = value, data = dat)
+res_icc <- ICCest(x = code_name, y = value, data = dat_datetime)
 df <- data.frame(
     x = "ICC of Three Pre-meal\nBG Measurements",
     y = res_icc$ICC,
@@ -574,72 +741,181 @@ print(gp)
 There is not much variation between groups
 
 
-## 2. Working with Dates
+## Q2. Working with Dates
 
 
 (a) Choose an appropriate plot to display the 3 blood glucose measurements over time
 
+display the time series data
 ```{r}
-head(dat)
-```
-
-```{r}
-df <- dat
-df <- df %>% mutate(datetime = paste(date, time))
-df$datetime <- parse_datetime(
-    df$datetime, 
-    format = "%Y-%m-%d %H:%M:%S")
-head(df)
-```
-
-```{r}
-class(df$datetime[1])
-```
-
-
-```{r}
-parse_datetime(df$datetime[1], format = "%Y-%m-%d %H:%M:%S")
-```
-
-
-```{r}
-gp <- ggplot(df, aes(x = datetime, y = value, color = code_name))
+gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name))
 gp <- gp +
-    geom_line()
+    geom_point() +
+    geom_smooth()
 print(gp)
 ```
 
+(b) Using the 3 meal measurements from above, align the data on a daily basis, i.e. transform the data to a wider format where each line represents a day and has a measurement per-person. Comment on any generated missing data. Show your code.
 ```{r}
-tmp <- df %>% group_by(date, code_name) %>% summarize(Mean = mean(value))
-tmp <- tmp %>% spread(code_name, Mean)
-head(tmp)
+df <- dat_datetime
+df <- df %>% group_by(date, code_name) %>% summarize(Mean = mean(value))
+df <- df %>% spread(code_name, Mean)
+
+dat_daily <- df
+head(dat_daily)
 ```
 
+show the places of missing value
 ```{r}
-tmp2 <- tmp %>% as.data.frame %>% dplyr::select(-date) %>% na.omit %>% as.matrix
-colnames(tmp2)
+df <- dat_daily
+df <- df %>% gather(measurement, value, -date) #%>% mutate(value = is.na(value))
+
+gp <- ggplot(df, aes(x = measurement, y = date, fill = value)) + geom_tile()
+print(gp)
 ```
 
+it turns out that most missing value occurred at pre-lunch blood glucose measurement.
+
+(c) Correlation plots are a way to visualize multivariate relationships. Use the corrplot package to make a correlation plot. What happens if you ignore the missing data?
 ```{r}
-head(tmp2)
-```
+### calculate correlations
+mat_cor <- tmp %>% as.data.frame %>% dplyr::select(-date) %>% na.omit %>% as.matrix
 
-```{r}
-colors = brewer.pal(name = "RdYlBu", n = 8)
-colors
-```
-
-
-
-```{r, fig.width = 10, fig.height = 10}
+### colors
 colors = brewer.pal(name = "RdYlBu", n = 8)
 colors = rev(colors)
 colors = colorRampPalette(colors)(100)
 
+### plot the corr matrix
 M <- cor(tmp2)
 corrplot.mixed(
     M, lower.col = colors, upper.col = colors)
 ```
 
 
-(d) One version of single imputation appropriate for longitudinal data is called
+(d) One version of single imputation appropriate for longitudinal data is called "hot-deck" imputation or “last observed carried forward (locf)”. Here the data are ordered (typically by time) and the last observed value is imputed into any time slots without an observed value. Using the data above perform two versions of LOCF and recalculate your correlation plots.
+    - i. Carry the last observation forward separately for each of the 3 categories
+    
+????
+```{r}
+### locf by column
+df <- dat_daily %>% na.locf(., na.rm = FALSE) 
+
+### arrange dataframe from wide to long formate
+df <- df %>% gather(measurement, value, -date)
+
+### plot the results
+gp <- ggplot(df, aes(x = measurement, y = date, fill = value)) + geom_tile()
+print(gp)
+```
+
+
+    - ii. Carry the last observation forward from the time of day (i.e. impute glucose before lunch using glucose before breakfast). 
+
+
+????
+```{r}
+### locf by row
+df <- dat_daily %>% t %>% na.locf(., na.rm = FALSE) %>% t %>% as.data.frame
+df$date <- parse_datetime(
+    df$date, 
+    format = "%Y-%m-%d")
+
+### arrange dataframe from wide to long formate
+df <- df %>% 
+    gather(measurement, value, -date) %>% 
+    mutate(value = as.numeric(value))
+
+### plot the results
+gp <- ggplot(df, aes(x = measurement, y = date, fill = value)) + geom_tile()
+print(gp)
+```
+    
+
+Note: The zoo package has the function na.locf() Comment on implications of each approach. Which approach do you think is better?
+
+# Q3. Smoothing 
+
+```{r}
+head(dat_daily)
+```
+
+
+(a) Fit a lowess smooth over time for each of the three measurements separately. Use the R function lowess(). Set the bandwidth f to 0.1. Plot the results
+```{r}
+gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name))
+gp <- gp +
+    geom_point() +
+    geom_smooth(method = 'loess', span = 0.1) +
+    theme(legend.position="bottom")
+
+print(gp)
+```
+
+(b) Set the bandwidth f to 0.9. Plot the results
+
+```{r}
+gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name))
+gp <- gp +
+    geom_point() +
+    geom_smooth(method = 'loess', span = 0.9) +
+    theme(legend.position="bottom")
+
+print(gp)
+```
+
+(c) What conclusion does each bandwidth provide
+????
+
+(d) Plot what you think is the “best” bandwidth for each measurement. Comment
+why you chose this value.
+```{r, fig.width=10, fig.height = 12}
+gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name)) + 
+    geom_point() +
+    theme(legend.position='none')
+
+gp1 <- gp +
+    geom_smooth(method = 'loess', span = 0.1) +
+    labs(title = "Bandwidht = 0.1")
+    
+gp2 <- gp +
+    geom_smooth(method = 'loess', span = 0.2) +
+    labs(title = "Bandwidht = 0.2")
+
+gp3 <- gp +
+    geom_smooth(method = 'loess', span = 0.5) +
+    labs(title = "Bandwidht = 0.5")
+
+gp4 <- gp +
+    geom_smooth(method = 'loess', span = 0.9) +
+    labs(title = "Bandwidht = 0.9")
+
+
+grid.arrange(gp1, gp2, gp3, gp4, ncol = 1)
+```
+
+In my opinion, there is not much pattern for each measurement. That is, the values distributed at the similar mean throughout the time. Therefore, I believe that the bandwidth should be at least above 0.5, since the bandwidth below 0.5 contains unnecessary variations.
+
+(e) Choose another smoothing method discussed in class (i.e. running means, kernel smoothing, splines). Do you think this fits the data better, worse or no different? Justify your conclusions visually.
+
+I choose b-splines for my alternative smoothing method. 
+```{r}
+gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name)) + 
+    geom_point() +
+    theme(legend.position='none')
+
+gp1 <- gp +
+    geom_smooth(method = lm, formula = y ~ splines::bs(x, 3), se = TRUE) +
+    labs(title = "Smoothing method: B-Spline")
+
+gp2 <- gp +
+    geom_smooth(method = 'loess', span = 0.9) +
+    labs(title = "Smoothing method: lowess; Bandwidht = 0.9")
+
+grid.arrange(gp1, gp2, ncol = 1)
+```
+
+Comparing the spline method and lowess method where the bandwidth = 0.9, the two methods are similar to each other when applying to this dataset.
+
+## Q4. Comparing Results 
+Choose someone in the class to compare your results to (who used a different person). Comment on any similarities or differences. Mention the name of the person you worked with
