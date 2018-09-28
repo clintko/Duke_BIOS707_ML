@@ -69,9 +69,6 @@ x_o[sample(1:N, size = 100)] <- NA
 
 ### quick view of the simulated data
 cat("", 
-    "Meab(Z):   ", mean(z),     "\n", 
-    "SD(Z):     ", sd(z),       "\n\n",
-    
     "Mean(x_c): ", mean(x_c),   "\n",
     "SD(x_c):   ", sd(x_c),     "\n\n",
     
@@ -168,20 +165,21 @@ x_impute[is.na(x_impute)] <- mean(x_o, na.rm = TRUE)
 
 ```{r}
 cat("", 
-    "Meab(Z):        ", mean(z),                 "\n", 
     "Mean(x_c):      ", mean(x_c),               "\n",
     "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n",
     "Mean(x_impute): ", mean(x_impute, na.rm = TRUE))
 ```
 
+compare the complete and observed $\rightarrow$ I do not reject the null
 ```{r}
 res_test <- t.test(x_c, x_o)
-res_test$conf.int
+res_test$p.value
 ```
 
+compare the complete and imputed $\rightarrow$ I do not reject the null
 ```{r}
 res_test <- t.test(x_c, x_impute)
-res_test$conf.int
+res_test$p.value
 ```
 
 ### (f) Return to your complete data. Among Z > 0, make 10% of the X values missing. Calculate the mean of this new X. Comment on any differences or similarities
@@ -228,24 +226,24 @@ cat("Compare E[X_complete] vs E[X_observed]: \n\t",
     "p-value:", res_test3$p.value)
 ```
 
-At 95% level, the p value of testing $E[X^c] = E[X^o]$ is very close to the threshold to reject the null, while comparing $E[X^c | Z > 0] = E[X^o | Z > 0]$ and comparing $E[X^c | Z < 0] = E[X^o | Z < 0]$, we definitely not reject the null since p value is much larger than 0.05. 
+The p value of testing $E[X^c] = E[X^o]$ is lower when comparing $E[X^c | Z > 0] = E[X^o | Z > 0]$ and comparing $E[X^c | Z < 0] = E[X^o | Z < 0]$. 
 
 
 (iii) **Using the mean of the observed X values, impute in the missing X-values. Does this improve our estimate of the mean of X?**
     - No
 
+observe the mean of complete, observed, and imputed x values.
 ```{r}
 x_impute <- x_o
 x_impute[is.na(x_impute)] <- mean(x_o, na.rm = TRUE)
 
 cat("", 
-    "Meab(Z):        ", mean(z),                 "\n", 
     "Mean(x_c):      ", mean(x_c),               "\n",
     "Mean(x_o):      ", mean(x_o, na.rm = TRUE), "\n",
     "Mean(x_impute): ", mean(x_impute, na.rm = TRUE))
 ```
 
-Support my answer using t-test  
+Support my answer using t-test: At 95% level, we do not reject the null for both test $E[X^c] = E[X^o]$ and $E[X^c] = E[X^{impute}]$ and both tests reported similar p-values.
 ```{r}
 res_test1 <- t.test(x_c, x_o)
 res_test2 <- t.test(x_c, x_impute)
@@ -256,7 +254,7 @@ cat("Compare E[X_complete] vs E[X_observed]: \n\t",
     "p-value:", res_test2$p.value)
 ```
 
-At 95% level, the p value of testing $E[X^c] = E[X^o]$ and $E[X^c] = E[X^impute]$ are both very close to the threshold to reject the null.
+
 
 (iv)  **We will perform conditional imputation:**
 
@@ -275,7 +273,7 @@ x_pred <- predict(fit, newdata = list(z))
     
 
     - C. Calculate new imputed mean of X. How does this compare to the true mean of X.
-        - The predicted mean is the same as imputed mean. From the t-test, ????
+        - The predicted mean becomes similar to the true mean of X. The conclusion can be supported by the t-test as well.
 ```{r}
 cat("", 
     "Mean(x_c):      ", mean(x_c),                  "\n",
@@ -310,6 +308,8 @@ x_pred <- predict(fit, newdata = list(z))
 ```
 
 The results of the t-test can be used as an evidence to show that the value could be recovered even we had set the missingness degree to be 100% (remove 100% of value where z > 0).
+
+Before imputation, the means are different, while after imputation, we do not reject that the means are the same.
 ```{r}
 res_test1 <- t.test(x_c, x_o)
 res_test2 <- t.test(x_c, x_pred)
@@ -318,47 +318,6 @@ cat("Compare E[X_complete] vs E[X_observed]: \n\t",
     "p-value:", res_test1$p.value, "\n",
     "Compare E[X_complete] vs E[X_predicted]: \n\t", 
     "p-value:", res_test2$p.value)
-```
-
-### Further Exploration: If you are inclined, go back to (f) and vary that percentage. At what point are we unable to recover the true value. Feel free to make any graphical results to justify your findings
-
-????
-```{r}
-### set seed
-set.seed(0)
-
-### set missing values
-idx  <- which(z > 0)
-
-### initialization
-percentage <- seq(from = 0.1, to = 1, by = 0.1)
-
-### simulation
-simulation <- function(){
-    res <- sapply(percentage, function(p){
-        pval <- c()
-        x_o  <- x_c
-        x_o[sample(idx, size = floor(length(idx) * p))] <- NA
-        fit <- lm(x_o ~ z)
-        x_pred <- predict(fit, newdata = list(z))
-
-        res_test <- t.test(x_c, x_pred)
-        pval <- c(pval, res_test$p.value)
-        return(pval)
-    }) # end sapply
-    return(res)
-} # end function
-
-res_pval <- t(replicate(50, simulation()))
-colnames(res_pval) <- percentage
-res_pval <- res_pval %>% 
-    as.data.frame %>% 
-    gather(percentage, value) %>% 
-    group_by(percentage) %>% 
-    summarise(Mean = mean(value))
-
-### show the results
-plot(res_pval$percentage, res_pval$Mean)
 ```
 
 
@@ -716,6 +675,8 @@ print(gp)
 
 It seems that the blood glucose measurement is a little bit lower during the pre-lunch comparing to pre-breakfast and pre-supper.
 
+
+Show the ICC and its 95% confidence interval.
 ```{r, fig.width = 3, fig.height = 4}
 res_icc <- ICCest(x = code_name, y = value, data = dat_datetime)
 df <- data.frame(
@@ -760,6 +721,7 @@ print(gp)
 df <- dat_datetime
 df <- df %>% group_by(date, code_name) %>% summarize(Mean = mean(value))
 df <- df %>% spread(code_name, Mean)
+#df$date <- factor(df$date, levels = df$date)
 
 dat_daily <- df
 head(dat_daily)
@@ -777,9 +739,12 @@ print(gp)
 it turns out that most missing value occurred at pre-lunch blood glucose measurement.
 
 (c) Correlation plots are a way to visualize multivariate relationships. Use the corrplot package to make a correlation plot. What happens if you ignore the missing data?
+
+
+first plot the correlation by remove missing data.
 ```{r}
 ### calculate correlations
-mat_cor <- tmp %>% as.data.frame %>% dplyr::select(-date) %>% na.omit %>% as.matrix
+mat_cor <- dat_daily %>% as.data.frame %>% dplyr::select(-date) %>% na.omit %>% as.matrix
 
 ### colors
 colors = brewer.pal(name = "RdYlBu", n = 8)
@@ -787,16 +752,32 @@ colors = rev(colors)
 colors = colorRampPalette(colors)(100)
 
 ### plot the corr matrix
-M <- cor(tmp2)
-corrplot.mixed(
-    M, lower.col = colors, upper.col = colors)
+M <- cor(mat_cor)
+corrplot.mixed(M, lower.col = colors, upper.col = colors)
+```
+
+If ignoring the NA values, the correlation could not be calculated and error occurs
+```{r}
+### calculate correlations; not removing NA values
+mat_cor <- dat_daily %>% as.data.frame %>% dplyr::select(-date) %>% as.matrix
+
+### colors
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors = rev(colors)
+colors = colorRampPalette(colors)(100)
+
+### plot the corr matrix
+M <- cor(mat_cor)
+corrplot.mixed(M, lower.col = colors, upper.col = colors)
 ```
 
 
+
 (d) One version of single imputation appropriate for longitudinal data is called "hot-deck" imputation or “last observed carried forward (locf)”. Here the data are ordered (typically by time) and the last observed value is imputed into any time slots without an observed value. Using the data above perform two versions of LOCF and recalculate your correlation plots.
+
     - i. Carry the last observation forward separately for each of the 3 categories
-    
-????
+
+Note that the order of date at the y axis is from bottom to top.    
 ```{r}
 ### locf by column
 df <- dat_daily %>% na.locf(., na.rm = FALSE) 
@@ -810,10 +791,26 @@ print(gp)
 ```
 
 
+
+recalculate correlation matrix
+```{r}
+### calculate correlations
+mat_cor <- df %>% as.data.frame %>% spread(measurement, value) %>% dplyr::select(-date) %>% na.omit %>% as.matrix
+
+### colors
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors = rev(colors)
+colors = colorRampPalette(colors)(100)
+
+### plot the corr matrix
+M <- cor(mat_cor)
+corrplot.mixed(M, lower.col = colors, upper.col = colors)
+```
+
+
     - ii. Carry the last observation forward from the time of day (i.e. impute glucose before lunch using glucose before breakfast). 
 
 
-????
 ```{r}
 ### locf by row
 df <- dat_daily %>% t %>% na.locf(., na.rm = FALSE) %>% t %>% as.data.frame
@@ -831,14 +828,30 @@ gp <- ggplot(df, aes(x = measurement, y = date, fill = value)) + geom_tile()
 print(gp)
 ```
     
+recalculate correlation matrix
+```{r}
+### calculate correlations
+mat_cor <- df %>% as.data.frame %>% spread(measurement, value) %>% dplyr::select(-date) %>% na.omit %>% as.matrix
+
+### colors
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors = rev(colors)
+colors = colorRampPalette(colors)(100)
+
+### plot the corr matrix
+M <- cor(mat_cor)
+corrplot.mixed(M, lower.col = colors, upper.col = colors)
+```
 
 Note: The zoo package has the function na.locf() Comment on implications of each approach. Which approach do you think is better?
 
-# Q3. Smoothing 
+**Comparing the recalculated correlation matrix**
+The first method of locf provide similar results to the one that was originally calculated, while the second one changed the correlation dramatically. The correlation of pre-breakfast and pre-lunch measurement increase at least two times after imputation using the second method.
 
-```{r}
-head(dat_daily)
-```
+**Which approach do you think is better**
+I think the first one "Carry the last observation forward separately for each of the 3 categories" because the value of pre-meal blood glucose may have different patterns for breakfast, lunch and supper. Also, for the patient I analyzed, the coorelation matrix changes dramtically if using the second method because the second method increase the correlation of variables.
+
+# Q3. Smoothing 
 
 
 (a) Fit a lowess smooth over time for each of the three measurements separately. Use the R function lowess(). Set the bandwidth f to 0.1. Plot the results
@@ -865,11 +878,13 @@ print(gp)
 ```
 
 (c) What conclusion does each bandwidth provide
-????
 
-(d) Plot what you think is the “best” bandwidth for each measurement. Comment
-why you chose this value.
-```{r, fig.width=10, fig.height = 12}
+The smaller bandwidth provide short time pattern of the the pre-meal blood glucose, while the larger bandwidth provde long time pattern of the measurement. 
+
+(d) Plot what you think is the “best” bandwidth for each measurement. Comment why you chose this value.
+
+
+```{r, echo = FALSE, fig.width=10, fig.height = 12}
 gp <- ggplot(dat_datetime, aes(x = datetime, y = value, color = code_name)) + 
     geom_point() +
     theme(legend.position='none')
@@ -894,7 +909,7 @@ gp4 <- gp +
 grid.arrange(gp1, gp2, gp3, gp4, ncol = 1)
 ```
 
-In my opinion, there is not much pattern for each measurement. That is, the values distributed at the similar mean throughout the time. Therefore, I believe that the bandwidth should be at least above 0.5, since the bandwidth below 0.5 contains unnecessary variations.
+In my opinion, there is not much pattern for each measurement when considering longer time period. That is, the values distributed at the similar mean throughout the time. Therefore, I believe that the bandwidth should be at least above 0.5, since the bandwidth below 0.5 might contain unnecessary variations.
 
 (e) Choose another smoothing method discussed in class (i.e. running means, kernel smoothing, splines). Do you think this fits the data better, worse or no different? Justify your conclusions visually.
 
@@ -918,4 +933,16 @@ grid.arrange(gp1, gp2, ncol = 1)
 Comparing the spline method and lowess method where the bandwidth = 0.9, the two methods are similar to each other when applying to this dataset.
 
 ## Q4. Comparing Results 
-Choose someone in the class to compare your results to (who used a different person). Comment on any similarities or differences. Mention the name of the person you worked with
+Choose someone in the class to compare your results to (who used a different person). Comment on any similarities or differences. Mention the name of the person you worked with.
+
+
+- The person I compare with: Yiwen
+- The patient in my report: #1
+- The patient in Yiwen's report: #13
+- Comparing results of patient # and #13
+    1. results in correlation
+        - In patients #1 and #13, the pre-breakfast and pre-lunch both have positive correlation but the correlation in patient #13 is much higher than that in patient #1.
+        - In patient #1, the pre-supper measurements is negatively correlated with measurements in pre-breakfast and pre-lunch, while in patient #13, the pre-supper measurements is positively correlated with measurements in other time period.
+    2. patterns of pre-meal measurement
+        - Based on the smoothing results, the pre-meal blood glucose meausrement have larger variation in the long time period in patient #13 while such pattern was not observed in patient #1.
+        
