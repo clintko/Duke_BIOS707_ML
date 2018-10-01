@@ -1,0 +1,89 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Background
+For the problem set 2, the first part includes to generate the random number of x and z, where
+
+$$Z \sim N(0, 1)$$
+$$X \sim N(Z, 1)$$
+# First option: add errors
+```{r}
+### initialization
+set.seed(0)
+
+### simulate a value of z
+z <- rnorm(N, mean = 0, sd = 1)
+
+### simulate a complete vector of x
+# both options result in the same results
+x1 <- z + rnorm(N, mean = 0, sd = 1)                          
+
+### observe the results
+cat("Len(x1):  ", length(x1), "\n",
+    "Mean(x1): ", mean(x1),"\n",
+    "sd(x1):   ", sd(x1))
+```
+
+
+# Second option: explicit for loop
+```{r}
+### initialization
+set.seed(0)
+
+### simulate a value of z
+z <- rnorm(N, mean = 0, sd = 1)
+
+### simulate a complete vector of x
+x2 <- c()
+for (num in z){
+    x2 <- c(x2, rnorm(1, mean = num, sd = 1))
+}
+
+### observe the results
+cat("Len(x2):  ", length(x2), "\n",
+    "Mean(x2): ", mean(x2),"\n",
+    "sd(x2):   ", sd(x2))
+```
+
+# Third option: replace for loop using apply
+```{r}
+### initialization
+set.seed(0)
+
+### simulate a value of z
+z <- rnorm(N, mean = 0, sd = 1)
+
+### simulate a complete vector of x
+x3 <- sapply(z, function(x){rnorm(1, mean = x, sd = 1)})
+
+### observe the results
+cat("Len(x3):  ", length(x3), "\n",
+    "Mean(x3): ", mean(x3),"\n",
+    "sd(x3):   ", sd(x3))
+```
+
+# Fourth option: feed z into rnorm directly
+```{r}
+### initialization
+set.seed(0)
+
+### simulate a value of z
+z <- rnorm(N, mean = 0, sd = 1)
+
+### simulate a complete vector of x
+x4 <- rnorm(N, mean = z, sd = 1)
+
+### observe the results
+cat("Len(x4):  ", length(x4), "\n",
+    "Mean(x4): ", mean(x4),"\n",
+    "sd(x4):   ", sd(x4))
+```
+
+
+# compare all four options directly
+```{r}
+cat(all(x1 == x2), all(x1 == x3), all(x1 == x4))
+```
+
