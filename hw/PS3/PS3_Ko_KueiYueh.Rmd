@@ -1,0 +1,463 @@
+---
+title: "BIOS707 | Problem set3"
+author: Kuei-Yueh (Clint) Ko
+output: 
+  html_notebook:
+    theme: united
+    toc: yes
+---
+
+# About the notebook
+
+This the problem set 3 of the course BIOS707. Below are the libraries required for this report.
+
+```{r}
+### tools
+library(tidyverse)
+library(cluster)
+library(foreach)
+library(clue)
+library(pROC)
+
+### plot and display
+library(RColorBrewer)
+library(pheatmap)
+library(grid)
+library(gridExtra)
+```
+
+# Part I. Simulation
+
+## Q1. Explore Clustering
+**Simulate a dataset where n = 100 and p = 50. Used your ICC function from problem set 2 to create 3 (k) distinct clusters in dataset.**
+
+my ICC function to simulate the data
+```{r}
+simulate_icc <- function(icc, grp_size = 10, n_grp = 5, mu_tot = 0, sig2_a = 1){
+    # function to simuate the data from specific ICC
+    # =================================
+    
+    ### calculate sig2_e from the ICC and sig2_a
+    sig2_e <- sig2_a * (1 / icc - 1)
+    
+    ### simulate alpha by sig2_a
+    alpha  <- rnorm(n_grp, mean = 0, sd = sig2_a^0.5)
+    
+    ### simulate error for each group by sig2_e
+    df <- sapply(mu_tot + alpha, function(x){
+        eps <- rnorm(grp_size, mean = 0, sd = sig2_e^0.5)
+        return(x + eps)
+    })
+
+    ### set column names
+    df <- data.frame(df)
+    colnames(df) <- paste("Grp", 1:n_grp)
+
+    ### gather and return
+    df <- df %>% gather(Group, Value)
+    return(df)
+} # end func
+```
+
+Demonstrate the results of my function by simulate one paramters only (p = 1)
+```{r, fig.width = 10, fig.height = 4}
+###
+K          <- 3
+N          <- 100
+ICC1       <- 0.9
+SIG2_ALPHA <- 100
+
+###
+df <- simulate_icc(ICC1, n_grp = K, grp_size = floor(N / K), sig2_a = SIG2_ALPHA)
+df1$ICC <- paste("ICC", "=", ICC1)
+
+df$Group <- factor(df$Group, levels = paste("Grp", 1:K))
+
+###
+gp <- ggplot(df, aes(x = Group, y = Value, color = Group)) + 
+    geom_jitter(width = 0.2) +
+    ggtitle("Simulating random effects with different ICC") +
+    theme(
+        axis.title.y = element_text(size = 15),
+        axis.title.x = element_text(size = 15),
+        axis.text.x  = element_text(size = 12, angle = 90, vjust = 0.5),
+        strip.text.x = element_text(size = 20, color = "grey30"))
+    
+print(gp)
+```
+
+### Q1 (a) 
+**Set your ICC to 0.3 and simulate a dataset. Show your simulation code. Apply K-means clustering and evaluate how well your clusters uncover the true group**
+
+
+simulate 50 variables (p = 50) with ICC = 0.3
+```{r}
+### instialization
+set.seed(0)
+K          <- 3
+N          <- 100
+ICC1       <- 0.3
+SIG2_ALPHA <- 10
+P          <- 50
+
+### simulation
+dat = replicate(
+    P, 
+    simulate_icc(
+        ICC1, 
+        n_grp = K, 
+        grp_size = floor(N / K), 
+        sig2_a = SIG2_ALPHA),
+    simplify = FALSE)
+
+### set binary merge function
+my_combine <- function(x, y){
+    y = y %>% select(-Group)
+    return(bind_cols(x, y))
+} # end func
+
+### reduced simulated data into one dataframe
+dat = foreach(
+    idx = 1:length(dat), 
+    .combine = my_combine) %do% {
+        df = dat[[idx]]
+        df = df %>% dplyr::rename_(
+            .dots=setNames(
+                names(.), 
+                c("Group", paste0("V", idx))))
+    }
+
+dat_sim = dat
+```
+
+```{r}
+head(dat_sim)
+```
+
+```{r}
+set.seed(0)
+
+unmatch = c()
+
+for (idx in 1:100){
+    ###
+    mat = dat_sim %>% select(-Group) %>% as.matrix
+    
+    ###
+    clust = kmeans(mat, centers = 3)
+    
+    ### confusion matrix
+    mat_conf = table(clust$cluster, dat_sim$Group)
+    
+    idx = solve_LSAP(mat_conf, maximum = TRUE)
+    num = sum(mat_conf[cbind(seq_along(idx), idx)])
+    unmatch = c(unmatch, nrow(mat) - num)
+} # end for loop
+
+data.frame(x = 1:length(unmatch), y = unmatch) %>%
+    ggplot(., aes(x = x, y = y)) +
+    geom_line() +
+    geom_point() +
+    labs(x = "iteration", y = "number of points mismatch")
+```
+
+### Q1 (b)
+
+```{r}
+### instialization
+K          <- 3
+N          <- 100
+ICC        <- 0.3
+SIG2_ALPHA <- 10
+P          <- 50
+
+### set binary merge function
+my_combine <- function(x, y){
+    y = y %>% select(-Group)
+    return(bind_cols(x, y))
+} # end func
+
+
+simulate_data <- function(icc, k, n, sig2_a, p, var_name = "V"){
+    ### simulation
+    dat = replicate(
+        p, 
+        simulate_icc(
+            icc, 
+            n_grp = k, 
+            grp_size = floor(n / k), 
+            sig2_a = sig2_a),
+        simplify = FALSE)
+    
+    ### reduced simulated data into one dataframe
+    dat = foreach(
+         idx = 1:length(dat), 
+         .combine = my_combine) %do% {
+             df = dat[[idx]]
+             df = df %>% dplyr::rename_(
+                 .dots=setNames(
+                names(.), 
+                c("Group", paste0(var_name, idx))))
+    } # end do in foreach
+} # end func
+
+simulate_kmean <- function(dat, iteration){
+    unmatch = c()
+
+    for (idx in 1:iteration){
+        ###
+        mat = dat %>% select(-Group) %>% as.matrix
+    
+        ###
+        clust = kmeans(mat, centers = 3)
+    
+        ### confusion matrix
+        mat_conf = table(clust$cluster, dat_sim$Group)
+    
+        idx = solve_LSAP(mat_conf, maximum = TRUE)
+        num = sum(mat_conf[cbind(seq_along(idx), idx)])
+        unmatch = c(unmatch, nrow(mat) - num) 
+    } # end for loop
+    return(unmatch)
+} # end func
+
+simulate_unmatch <- function(icc, k, n, sig2_a, p, iter_km){
+    #
+    dat_sim = simulate_data(icc, k, n, sig2_a, p)
+    unmatch = simulate_kmean(dat_sim, iter_km)
+    
+    unmatch_events    = sum(unmatch > 0)
+    unmatch_points_mu = mean(unmatch)
+    unmatch_points_sd = sd(unmatch)
+    
+    res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd)
+    names(res) = c("events", "points_mu", "points_sd")
+    
+    return(res)
+}
+```
+
+
+
+```{r}
+set.seed(0)
+
+iccs = seq(0.1, 1.0, length.out = 10)
+ITER_KM = 1000
+
+res = sapply(iccs, function(icc) {
+    print(icc)
+    res = simulate_unmatch(icc, K, N, SIG2_ALPHA, P, ITER_KM)
+    return(res)
+}) # end sapply
+
+
+#for (icc in iccs){
+#    print(icc)
+#    dat_sim = simulate_data(icc, K, N, SIG2_ALPHA, P)
+#    unmatch = simulate_kmean(dat_sim, iter_km)
+#    unmatch_events = c(unmatch_events, sum(unmatch > 0))
+#    unmatch_points_mu = c(unmatch_points, mean(unmatch))
+#    unmatch_points_sd = c(unmatch_points, sd(unmatch))
+#} # end for loop
+```
+
+```{r}
+head(res)
+```
+
+
+```{r, fig.height = 5, fig.width = 5}
+dat = data.frame(x = iccs, y = res["events",])
+gp1 = ggplot(dat, aes(x = x, y = y)) +
+    geom_line() +
+    geom_point() +
+    labs(x = "ICC", 
+         y = "number of time kmeans \nfailed to cluster correctly",
+         title = paste("Number of kmeans for each ICC", iter_km))
+
+dat = data.frame(x = iccs, y = res["points_mu",])
+gp2 = ggplot(dat, aes(x = x, y = y)) +
+    geom_line() +
+    geom_point() +
+    labs(x = "ICC", 
+         y = "Expected points uncover \ninto wrong groups")
+
+grid.arrange(gp1, gp2, nrow = 2)
+```
+
+
+### Q1 (c)
+
+```{r}
+simulate_data_noise <- function(icc, q, k, n, sig2_a, p){
+    n1 = q
+    n2 = p-q
+    
+    dat1 = simulate_data(icc,    k, n, sig2_a, n1, var_name = "V")
+    dat2 = simulate_data(0.0001, k, n, sig2_a, n2, var_name = "N")
+    
+    tmp = dat2 %>% select(-Group)
+    colnames(tmp)
+    dat = bind_cols(dat1, tmp)
+    
+    return(dat)
+} # end func
+
+simulate_unmatch_noise <- function(icc, q, k, n, sig2_a, p, iter_km){
+    #
+    dat_sim = simulate_data_noise(icc, q, k, n, sig2_a, p)
+    unmatch = simulate_kmean(dat_sim, iter_km)
+    
+    unmatch_events    = sum(unmatch > 0)
+    unmatch_points_mu = mean(unmatch)
+    unmatch_points_sd = sd(unmatch)
+    
+    res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd)
+    names(res) = c("events", "points_mu", "points_sd")
+    
+    return(unmatch)
+}
+```
+
+```{r}
+simulate_data_noise(0.9, 15, K, N, SIG2_ALPHA, P)
+```
+
+
+```{r}
+set.seed(0)
+simulate_unmatch_noise(1.0, 49, K, N, SIG2_ALPHA, P, ITER_KM)
+```
+
+
+```{r}
+### instialization
+K          <- 3
+N          <- 100
+ICC        <- 0.3
+SIG2_ALPHA <- 10
+P          <- 50
+ITER_KM    <- 500
+set.seed(0)
+
+###
+iccs = seq(0.1, 1.0, length.out = 10)
+qs   = c(1, 5, 10, 20, 25, 49)
+
+res_icc_q = NULL
+for (icc in iccs) {
+    cat("\nicc", icc)
+    for (q in qs) {
+        cat("#")
+        res  = simulate_unmatch_noise(icc, q, K, N, SIG2_ALPHA, P, ITER_KM)
+        res2 = c(res, q, icc)
+        names(res2)[4:5] = c("q", "icc")
+        
+        res_icc_q = rbind(res_icc_q, res2)
+        #print(res2)
+    } # end inner loop
+} # end outer loop
+```
+
+```{r}
+ggplot(as.data.frame(res_icc_q), 
+       aes(x = as.character(q), 
+           y = as.character(icc), 
+           fill = events)) + 
+    geom_tile() + 
+    scale_fill_distiller(
+        palette = "Reds", 
+        direction = 1) +
+    labs(x = "q", y = "ICC")
+```
+
+```{r}
+res_icc_q
+```
+
+
+```{r}
+ggplot(as.data.frame(res_icc_q), 
+       aes(x = as.character(q), 
+           y = as.character(icc), 
+           fill = points_mu)) + 
+    geom_tile() + 
+    scale_fill_distiller(
+        palette = "Reds", 
+        direction = 1) +
+    labs(x = "q", y = "ICC")
+```
+
+
+
+
+
+```{r, fig.height=7, fig.width=7}
+### separate group id and values
+dat_id  = dat_sim %>% select(Group) 
+dat_val = dat_sim %>% select(-Group)
+
+### transpose the matrix and arrange
+dat_id  = as.data.frame(dat_id)
+dat_val = as.data.frame(t(dat_val))
+colnames(dat_val) = rownames(dat_id)
+
+### heatmap and labels
+# add heatmap
+setHook("grid.newpage", function(){
+    pushViewport(
+        viewport(
+            x=1, y=1, width=0.9, height=0.9, 
+            name="vp", just=c("right","top")))}, 
+    action="prepend")
+
+pheatmap(dat_val,
+    annotation = dat_id,
+    show_rownames = FALSE, 
+    show_colnames = FALSE)
+
+# add x, y labels
+setHook("grid.newpage", NULL, "replace")
+grid.text("Observations", y=-0.02, gp = gpar(fontsize=16))
+grid.text("Variables",    x=-0.07, 
+          rot = 90, gp=gpar(fontsize=16))
+```
+
+
+```{r}
+dat
+```
+
+
+```{r}
+foo()
+```
+
+
+
+## Q12. PCA and Clustering
+
+
+# Part II. Working with Data
+
+## Q21. Exploring / Clearing Data
+
+## Q22. PCA
+
+## Q23. Clustering
+
+### K-Mediods
+
+### Hierarchical Clustering
+
+#### Clustering Method
+
+#### Standardizing Data
+
+#### Distance Metric
+
+#### Sampling
+
+#### Comment
+Comment on what you think the most important factors are in cluster stability

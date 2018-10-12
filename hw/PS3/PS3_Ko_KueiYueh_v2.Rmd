@@ -1,0 +1,694 @@
+---
+title: "R Notebook"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+read in data
+
+```{r}
+library(tidyverse)
+library(gridExtra)
+library(cluster)
+library(pheatmap)
+library(pROC)
+library(RColorBrewer)
+```
+
+
+```{r}
+dat_mice = read_csv("./Data_Cortex_Nuclear.csv")
+head(dat_mice)
+```
+
+```{r}
+dim(dat_mice)
+```
+
+```{r}
+idx = dat_mice %>% is.na %>% colMeans %>% `<`(0.1)
+dat = dat_mice[, idx]
+dat %>% ncol
+```
+
+```{r}
+idx = c("MouseID", "Genotype", "Treatment", "Behavior", "class")
+dat_pheno = dat_mice %>% select(idx)
+dat_exprs = dat_mice %>% select(-idx)
+```
+
+```{r}
+single_mean_impute = function(dat){
+    dat_imputed = lapply(dat, function(x){
+        mu = mean(x, na.rm = TRUE)
+        x[is.na(x)] = mu
+        return(x)
+    })
+    return(do.call(cbind, dat_imputed))
+} # end func
+
+dat_exprs_imp = single_mean_impute(dat_exprs) %>% as.tibble
+```
+
+PCA
+
+https://stackoverflow.com/questions/47243288/ggplot2-vertical-lines-from-data-points-in-grouped-scatter-plot
+
+```{r}
+res_pca = princomp(dat_exprs_imp)
+
+###
+x = res_pca$sdev
+x = x^2
+x = x / sum(x)
+
+###
+df = data.frame(
+    PC   = 1:length(x),
+    prop = x, 
+    cump = cumsum(x))
+
+idx = which(df$cump > 0.9)[1]
+
+###
+gp1 = ggplot(df, aes(x = PC, y = prop))
+gp1 = gp1 +
+    geom_point() +
+    geom_linerange(aes(ymax = prop, ymin = 0))
+
+gp2 = ggplot(df, aes(x = PC, y = cump))
+gp2 = gp2 +
+    geom_point() +
+    geom_linerange(aes(ymax = cump, ymin = 0)) +
+    labs(title = paste("90% PC:", idx))
+
+grid.arrange(gp1, gp2, ncol = 1)
+```
+
+about two meaningful PCs
+
+scale the data and repeat
+```{r}
+dat_exprs_scale = scale(dat_exprs_imp)
+```
+
+```{r}
+res_pca = princomp(dat_exprs_scale)
+
+###
+x = res_pca$sdev
+x = x^2
+x = x / sum(x)
+
+###
+df = data.frame(
+    PC   = 1:length(x),
+    prop = x, 
+    cump = cumsum(x))
+
+idx = which(df$cump > 0.9)[1]
+
+gp1 = ggplot(df, aes(x = PC, y = prop))
+gp1 = gp1 +
+    geom_point() +
+    geom_linerange(aes(ymax = prop, ymin = 0))
+
+gp2 = ggplot(df, aes(x = PC, y = cump))
+gp2 = gp2 +
+    geom_point() +
+    geom_linerange(aes(ymax = cump, ymin = 0)) +
+    labs(title = paste("90% PC:", idx))
+
+grid.arrange(gp1, gp2, ncol = 1)
+```
+
+```{r}
+colnames(dat_pheno)
+```
+
+
+```{r}
+res_pca = princomp(dat_exprs_imp)
+
+df = dat_pheno
+df$pc1 = res_pca$scores[, 1]
+df$pc2 = res_pca$scores[, 2]
+
+
+my_geom = geom_point(size = 0.5)
+
+gp1 = ggplot(df, aes(x = pc1, y = pc2, color = Genotype)) + 
+    my_geom +
+    labs(title = "Genotype")
+
+gp2 = ggplot(df, aes(x = pc1, y = pc2, color = Treatment)) + 
+    my_geom +
+    labs(title = "Treatment")
+
+gp3 = ggplot(df, aes(x = pc1, y = pc2, color = Behavior)) + 
+    my_geom +
+    labs(title = "Behavior")
+
+gp4 = ggplot(df, aes(x = pc1, y = pc2, color = class)) + 
+    my_geom +
+    labs(title = "class")
+
+grid.arrange(gp1, gp2, gp3, gp4, nrow = 2, ncol = 2)
+```
+
+(d) i. logistic regression
+
+```{r, echo = FALSE}
+concordance <- function(model){
+    
+    # Get all actual observations and their fitted values into a frame
+    fitted <- data.frame(cbind(model$y, model$fitted.values))
+    colnames(fitted)<-c('respvar','score')
+    
+    # Subset only ones
+    ones  <- fitted[fitted[,1] == 1,]
+    # Subset only zeros
+    zeros <- fitted[fitted[,1] == 0,]
+    
+    #print(ones)
+    #print(zeros)
+    # Initialise all the values
+    pairs_tested <- 0
+    conc         <- 0
+    disc         <- 0
+    ties         <- 0
+      
+    # Get the values in a for-loop
+    for(i in 1:nrow(ones)) {
+          
+        for(j in 1:nrow(zeros)) {
+            pairs_tested<-pairs_tested + 1
+            
+            if        (ones[i, 2] >  zeros[j, 2]) { 
+                conc <- conc + 1 
+            } else if (ones[i, 2] == zeros[j, 2]){ 
+                ties <- ties + 1 
+            } else { 
+                disc <- disc + 1 
+            } # end if-else
+        } # end inner for
+    } # end outer for
+    
+    # Calculate concordance, discordance and ties
+    concordance <- conc / pairs_tested
+    discordance <- disc / pairs_tested
+    ties_perc   <- ties / pairs_tested
+    n           <- nrow(fitted)
+    
+    # index
+    # http://support.sas.com/kb/45/767.html
+    # http://support.sas.com/documentation/cdl/en/statug/66103/HTML/default/viewer.htm#statug_surveylogistic_details64.htm
+    return(
+        list(
+            "Concordance" = concordance,
+            "Discordance" = discordance,
+            "Tied"        = ties_perc,
+            "Pairs"       = pairs_tested,
+            
+            ### Somers' D
+            "Somers D"    = (concordance - discordance),
+            
+            ### Goodman-Kruskal Gamma
+            "gamma"       = (concordance - discordance) / (concordance + discordance),
+            
+            ### Kendall's Tau-a
+            "tau-a"       = (conc - disc) / (0.5 * n * (n - 1)),
+            
+            ### c-statistics
+            "c"           = auc(model$y, model$fitted.values)
+        ) # end list
+    ) # end return
+} # end func
+```
+
+
+```{r}
+df = dat_exprs_imp
+df$Genotype = dat_pheno$Genotype
+df$Genotype = factor(df$Genotype, levels = c("Control", "Ts65Dn"))
+df$Genotype = as.numeric(df$Genotype) - 1
+
+fit_logit = glm(Genotype ~ ., data = df, family = binomial(link = "logit"))
+summary(fit_logit)
+```
+
+```{r}
+head(dat_exprs_imp, 2)
+```
+
+
+
+```{r}
+vec = dat_pheno$Genotype
+vec = factor(vec, levels = c("Control", "Ts65Dn"))
+vec = as.numeric(vec)
+
+tmp = lapply(dat_exprs_imp, function(x){
+    cor(vec, x)
+})
+
+#res = as.numeric(tmp)
+tmp = unlist(tmp)
+idx = which(abs(tmp) > 0.2)
+```
+
+
+```{r}
+idx
+```
+
+
+```{r}
+df = dat_exprs_imp[, idx]
+df$Genotype = dat_pheno$Genotype
+df$Genotype = factor(df$Genotype, levels = c("Control", "Ts65Dn"))
+df$Genotype = as.numeric(df$Genotype) - 1
+
+fit_logit = glm(Genotype ~ ., data = df, family = binomial(link = "logit"))
+summary(fit_logit)
+```
+
+```{r}
+concordance(fit_logit)
+```
+
+
+
+(d) ii. regress teh genotype one the first few meaning ful
+```{r}
+df = dat_pheno
+df$pc1 = res_pca$scores[, 1]
+df$pc2 = res_pca$scores[, 2]
+df$pc3 = res_pca$scores[, 3]
+df$pc4 = res_pca$scores[, 4]
+
+df$Genotype = factor(df$Genotype, levels = c("Control", "Ts65Dn"))
+df$Genotype = as.numeric(df$Genotype) - 1
+
+fit_logit = glm(Genotype ~ pc1 + pc2 + pc3 + pc4, data = df, family = binomial(link = "logit"))
+summary(fit_logit)
+```
+
+
+
+
+
+```{r}
+concordance(fit_logit)
+```
+
+
+# Clustering
+
+K-Mediods
+
+```{r}
+library(cluster)
+library(pheatmap)
+library(pROC)
+library(RColorBrewer)
+```
+
+```{r}
+clust_mediods = pam(dat_exprs_imp, k = 3)
+```
+
+```{r}
+clust_sil = silhouette(clust_mediods)
+mean(clust_sil[, 3])
+
+```
+
+```{r}
+sil_score = rep(0, 10)
+
+for (k in 2:5){
+    clust = pam(dat_exprs_imp, k = k)
+    sil   = silhouette(clust)
+    sil_score[k] = mean(sil[, 3])    
+} # end for loop
+
+qplot(1:length(sil_score), sil_score, geom = c("line", "point")) +
+    scale_x_continuous(breaks = 1:length(sil_score))
+```
+
+There are around 2 to 5 clusters. The best chose of k is 3.
+
+```{r}
+clust_mediods = pam(dat_exprs_imp, k = 3)
+
+df  = dat_pheno %>% select(-MouseID)
+
+res = lapply(df, function(x){
+    df = table(clust_mediods$clustering, x) %>% as.matrix
+    rownames(df) = paste("cluster", 1:3)
+    return(df)
+}) # end lapply
+
+for (mat in res){
+    pheatmap(
+        mat,
+        #color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100))
+        color = colorRampPalette(brewer.pal(n = 7, name = "Reds"))(100),
+        treeheight_row = 0,
+        treeheight_col = 0,
+    ) # end pheatmap
+} # end for loop
+```
+
+
+
+```{r}
+clust_mediods = pam(dat_exprs_imp, k = 3)
+
+df  = dat_pheno %>% select(-MouseID)
+
+res = lapply(df, function(x){
+    df = table(clust_mediods$clustering, x) %>% 
+        as.data.frame %>% 
+        dplyr::rename_(
+            .dots=setNames(
+                names(.), 
+                c("cluster", "variable", "freq")))
+}) # end lapply
+
+gp  = lapply(res, function(df){
+        ggplot(df, aes(x = cluster, y = variable, fill = freq)) + geom_tile()
+}) # end lapply
+
+
+grid.arrange(gp[[1]], gp[[2]], gp[[3]], gp[[4]], nrow = 2, ncol = 2)
+```
+
+```{r}
+colnames(dat_exprs_imp)
+```
+
+```{r}
+sil_score = rep(0, 10)
+
+for (k in 2:5){
+    clust = pam(t(dat_exprs_imp), k = k)
+    sil   = silhouette(clust)
+    sil_score[k] = mean(sil[, 3])    
+} # end for loop
+
+qplot(1:length(sil_score), sil_score, geom = c("line", "point")) +
+    scale_x_continuous(breaks = 1:length(sil_score))
+```
+
+
+```{r}
+clust_mediods_protein = pam(t(dat_exprs_imp), k = 5)
+idx = order(clust_mediods_protein$cluster)
+print(idx)
+```
+
+```{r}
+colors = brewer.pal(name = "RdYlBu", n = 8)
+colors = rev(colors)
+colors = colorRampPalette(colors)(100)
+
+res = cor(dat_exprs_imp[,idx])
+corrplot::corrplot(res, col = colors, tl.cex=0.2)
+
+#corrplot.mixed(M, lower.col = colors, upper.col = colors)
+```
+
+```{r}
+mat = dist(dat_exprs_imp, )
+hclust(mat)
+```
+
+
+```{r}
+mat = cor(t(dat_exprs_imp))
+mat = 1 - mat
+mat = as.dist(mat)
+
+methods = c("single", "complete", "average")
+res = lapply(methods, function(method){
+    tmp = hclust(mat, method = method)
+    tmp = table(cutree(tmp, k = 4))
+    return(tmp)
+})
+
+res = do.call(rbind, res)
+rownames(res) = methods
+res
+```
+
+The cluster size are similar in the complete method, while 
+
+```{r}
+mat = cor(t(dat_exprs_scale))
+mat = 1 - mat
+mat = as.dist(mat)
+
+methods = c("single", "complete", "average")
+res = lapply(methods, function(method){
+    tmp = hclust(mat, method = method)
+    tmp = table(cutree(tmp, k = 4))
+    return(tmp)
+})
+
+res = do.call(rbind, res)
+rownames(res) = methods
+res
+```
+
+the method complete and average now create clusters with about similar sizes compare to the one without scaled
+
+Using the distance matrix from standandized data, the single and average method
+```{r}
+mat = dist(dat_exprs_scale)
+
+methods = c("single", "complete", "average")
+res = lapply(methods, function(method){
+    tmp = hclust(mat, method = method)
+    tmp = table(cutree(tmp, k = 4))
+    return(tmp)
+})
+
+res = do.call(rbind, res)
+rownames(res) = methods
+res
+```
+
+
+sampling 20% of the data (observations) and compare cluster membership
+```{r}
+mat = dist(dat_exprs_scale)
+
+set.seed(0)
+res = lapply(methods, function(method){
+    tmp = hclust(mat, method = method)
+    tmp = cutree(tmp, k = 4)
+    
+    sil = silhouette(tmp, mat)
+    sil = mean(sil[, 3])
+    return(sil)
+})
+names(res) = methods
+res= unlist(res)
+res
+```
+
+sampling evaluation
+https://www.stat.berkeley.edu/~spector/s133/Clus.html
+```{r}
+set.seed(0)
+
+ITER_HC = 100
+methods = c("single", "complete", "average")
+
+res_hc_sampling = NULL
+for (dummy_num in 1:ITER_HC){
+    df = dat_exprs_scale %>% as.data.frame %>% sample_frac(0.2)
+    mat = dist(df)
+    
+    
+    res = lapply(methods, function(method){
+        tmp = hclust(mat, method = method)
+        tmp = cutree(tmp, k = 4)
+    
+        sil = silhouette(tmp, mat)
+        sil = mean(sil[, 3])
+        return(sil)
+    }) # end lapply
+    
+    names(res) = methods
+    res= unlist(res)
+    
+    res_hc_sampling = rbind(res_hc_sampling, res)
+} # end for loop
+
+#res_hc_sampling
+dat = res_hc_sampling %>% 
+    as.data.frame %>% 
+    mutate(iteration = 1:ITER_HC) %>%
+    gather(method, score, -iteration)
+
+gp = ggplot(dat, aes(
+    x = iteration, 
+    y = score, group = method, 
+    color = method)) + 
+    geom_line() + 
+    labs(y = "silhouette score", title = "Scaled data ; Sampling 20% ; distance matrix")
+
+gp_scale_dist = gp
+```
+
+```{r}
+set.seed(0)
+
+ITER_HC = 100
+methods = c("single", "complete", "average")
+
+res_hc_sampling = NULL
+for (dummy_num in 1:ITER_HC){
+    
+    df = dat_exprs_imp %>% as.data.frame %>% sample_frac(0.2)
+    mat = dist(df)
+    
+    
+    res = lapply(methods, function(method){
+        tmp = hclust(mat, method = method)
+        tmp = cutree(tmp, k = 4)
+    
+        sil = silhouette(tmp, mat)
+        sil = mean(sil[, 3])
+        return(sil)
+    }) # end lapply
+    
+    names(res) = methods
+    res= unlist(res)
+    
+    res_hc_sampling = rbind(res_hc_sampling, res)
+} # end for loop
+
+#res_hc_sampling
+dat = res_hc_sampling %>% 
+    as.data.frame %>% 
+    mutate(iteration = 1:ITER_HC) %>%
+    gather(method, score, -iteration)
+
+gp = ggplot(dat, aes(
+    x = iteration, 
+    y = score, group = method, 
+    color = method)) + 
+    geom_line() + 
+    labs(y = "silhouette score", title = "Imputed data ; Sampling 20% ; distance matrix")
+
+gp_imp_dist = gp
+```
+
+
+do it again with correlation matrix
+```{r}
+set.seed(0)
+
+ITER_HC = 100
+methods = c("single", "complete", "average")
+
+res_hc_sampling = NULL
+for (dummy_num in 1:ITER_HC){
+    df = dat_exprs_scale %>% as.data.frame %>% sample_frac(0.2)
+    mat = cor(t(df))
+    mat = 1 - mat
+    mat = as.dist(mat)
+    
+    res = lapply(methods, function(method){
+        tmp = hclust(mat, method = method)
+        tmp = cutree(tmp, k = 4)
+    
+        sil = silhouette(tmp, mat)
+        sil = mean(sil[, 3])
+        return(sil)
+    }) # end lapply
+    
+    names(res) = methods
+    res= unlist(res)
+    
+    res_hc_sampling = rbind(res_hc_sampling, res)
+} # end for loop
+
+#res_hc_sampling
+dat = res_hc_sampling %>% 
+    as.data.frame %>% 
+    mutate(iteration = 1:ITER_HC) %>%
+    gather(method, score, -iteration)
+
+gp = ggplot(dat, aes(
+    x = iteration, 
+    y = score, group = method, 
+    color = method)) + 
+    geom_line() + 
+    labs(y = "silhouette score", title = "Scaled Data; Sampling 20% ; Correlation")
+
+gp_scale_cor = gp
+```
+
+
+
+```{r}
+set.seed(0)
+
+ITER_HC = 100
+methods = c("single", "complete", "average")
+
+res_hc_sampling = NULL
+for (dummy_num in 1:ITER_HC){
+    df = dat_exprs_imp %>% as.data.frame %>% sample_frac(0.2)
+    mat = cor(t(df))
+    mat = 1 - mat
+    mat = as.dist(mat)
+    
+    res = lapply(methods, function(method){
+        tmp = hclust(mat, method = method)
+        tmp = cutree(tmp, k = 4)
+    
+        sil = silhouette(tmp, mat)
+        sil = mean(sil[, 3])
+        return(sil)
+    }) # end lapply
+    
+    names(res) = methods
+    res= unlist(res)
+    
+    res_hc_sampling = rbind(res_hc_sampling, res)
+} # end for loop
+
+#res_hc_sampling
+dat = res_hc_sampling %>% 
+    as.data.frame %>% 
+    mutate(iteration = 1:ITER_HC) %>%
+    gather(method, score, -iteration)
+
+gp = ggplot(dat, aes(
+    x = iteration, 
+    y = score, group = method, 
+    color = method)) + 
+    geom_line() + 
+    labs(y = "silhouette score", title = "Imputed Data; Sampling 20% ; Correlation")
+
+
+gp_imp_cor = gp
+```
+
+
+
+```{r}
+my_geom = theme(title = element_text(size = 7))
+grid.arrange(gp_imp_dist + my_geom, 
+             gp_imp_cor + my_geom, 
+             gp_scale_dist + my_geom, 
+             gp_scale_cor + my_geom)
+```
+

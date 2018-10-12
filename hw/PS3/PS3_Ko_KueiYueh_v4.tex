@@ -1,0 +1,873 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={BIOS707 \textbar{} Problem set3},
+            pdfauthor={Kuei-Yueh (Clint) Ko},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{BIOS707 \textbar{} Problem set3}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Kuei-Yueh (Clint) Ko}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\section{About the notebook}\label{about-the-notebook}
+
+This the problem set 3 of the course BIOS707. Below are the libraries
+required for this report.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### tools}
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching packages ----------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
+\end{verbatim}
+
+\begin{verbatim}
+## √ ggplot2 3.0.0     √ purrr   0.2.5
+## √ tibble  1.4.2     √ dplyr   0.7.6
+## √ tidyr   0.8.1     √ stringr 1.3.1
+## √ readr   1.1.1     √ forcats 0.3.0
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts -------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(cluster)}
+\KeywordTok{library}\NormalTok{(foreach)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'foreach'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:purrr':
+## 
+##     accumulate, when
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(clue)}
+\KeywordTok{library}\NormalTok{(pROC)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Type 'citation("pROC")' for a citation.
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'pROC'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     cov, smooth, var
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### plot and display}
+\KeywordTok{library}\NormalTok{(RColorBrewer)}
+\KeywordTok{library}\NormalTok{(pheatmap)}
+\KeywordTok{library}\NormalTok{(grid)}
+\KeywordTok{library}\NormalTok{(gridExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'gridExtra'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     combine
+\end{verbatim}
+
+\section{Part I. Simulation}\label{part-i.-simulation}
+
+\subsection{Q1. Explore Clustering}\label{q1.-explore-clustering}
+
+\textbf{Simulate a dataset where n = 100 and p = 50. Used your ICC
+function from problem set 2 to create 3 (k) distinct clusters in
+dataset.}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{##### Global variables #####}
+\NormalTok{K          <-}\StringTok{ }\DecValTok{3}    \CommentTok{# number of group}
+\NormalTok{N          <-}\StringTok{ }\DecValTok{100}  \CommentTok{# number of observations}
+\NormalTok{SIG2_ALPHA <-}\StringTok{ }\DecValTok{10}   \CommentTok{# variance of alpha for icc simulation}
+\NormalTok{P          <-}\StringTok{ }\DecValTok{50}   \CommentTok{# number of parameters}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{##### My ICC function #####}
+\NormalTok{simulate_icc <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(icc, }\DataTypeTok{grp_size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{n_grp =} \DecValTok{5}\NormalTok{, }\DataTypeTok{mu_tot =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sig2_a =} \DecValTok{1}\NormalTok{)\{}
+    \CommentTok{# function to simuate the data from specific ICC}
+    \CommentTok{# =================================}
+    
+\NormalTok{    ### calculate sig2_e from the ICC and sig2_a}
+\NormalTok{    sig2_e <-}\StringTok{ }\NormalTok{sig2_a }\OperatorTok{*}\StringTok{ }\NormalTok{(}\DecValTok{1} \OperatorTok{/}\StringTok{ }\NormalTok{icc }\OperatorTok{-}\StringTok{ }\DecValTok{1}\NormalTok{)}
+    
+\NormalTok{    ### simulate alpha by sig2_a}
+\NormalTok{    alpha  <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(n_grp, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =}\NormalTok{ sig2_a}\OperatorTok{^}\FloatTok{0.5}\NormalTok{)}
+    
+\NormalTok{    ### simulate error for each group by sig2_e}
+\NormalTok{    df <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(mu_tot }\OperatorTok{+}\StringTok{ }\NormalTok{alpha, }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{        eps <-}\StringTok{ }\KeywordTok{rnorm}\NormalTok{(grp_size, }\DataTypeTok{mean =} \DecValTok{0}\NormalTok{, }\DataTypeTok{sd =}\NormalTok{ sig2_e}\OperatorTok{^}\FloatTok{0.5}\NormalTok{)}
+        \KeywordTok{return}\NormalTok{(x }\OperatorTok{+}\StringTok{ }\NormalTok{eps)}
+\NormalTok{    \})}
+
+\NormalTok{    ### set column names}
+\NormalTok{    df <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(df)}
+    \KeywordTok{colnames}\NormalTok{(df) <-}\StringTok{ }\KeywordTok{paste}\NormalTok{(}\StringTok{"Grp"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\NormalTok{n_grp)}
+
+\NormalTok{    ### gather and return}
+\NormalTok{    df <-}\StringTok{ }\NormalTok{df }\OperatorTok{%>%}\StringTok{ }\KeywordTok{gather}\NormalTok{(Group, Value)}
+    \KeywordTok{return}\NormalTok{(df)}
+\NormalTok{\} }\CommentTok{# end func}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Q1 (a)}\label{q1-a}
+
+\textbf{Set your ICC to 0.3 and simulate a dataset. Show your simulation
+code. Apply K-means clustering and evaluate how well your clusters
+uncover the true group}
+
+First, I set required function for data simulation and visualization
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{##### helper function in simulate data #####}
+\NormalTok{my_combine <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x, y)\{}
+    \CommentTok{# binary merge function}
+    \CommentTok{# ==========================}
+\NormalTok{    y =}\StringTok{ }\NormalTok{y }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{Group)}
+    \KeywordTok{return}\NormalTok{(}\KeywordTok{bind_cols}\NormalTok{(x, y))}
+\NormalTok{\} }\CommentTok{# end func}
+
+\NormalTok{##### function that simulate the data #####}
+\NormalTok{simulate_data <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(icc, }\DataTypeTok{k =}\NormalTok{ K, }\DataTypeTok{n =}\NormalTok{ N, }\DataTypeTok{sig2_a =}\NormalTok{ SIG2_ALPHA, }\DataTypeTok{p =}\NormalTok{ P, }\DataTypeTok{var_name =} \StringTok{"V"}\NormalTok{, }\DataTypeTok{func_combine =}\NormalTok{ my_combine)\{}
+    \CommentTok{# simulate data using the icc simulating function above}
+    \CommentTok{# =======================================}
+    
+\NormalTok{    ### simulation using icc function}
+\NormalTok{    dat =}\StringTok{ }\KeywordTok{replicate}\NormalTok{(}
+\NormalTok{        p,             }\CommentTok{# number of parameters}
+        \KeywordTok{simulate_icc}\NormalTok{( }\CommentTok{# each parameter is simulate independently}
+\NormalTok{            icc, }
+            \DataTypeTok{n_grp =}\NormalTok{ k, }
+            \DataTypeTok{grp_size =} \KeywordTok{floor}\NormalTok{(n }\OperatorTok{/}\StringTok{ }\NormalTok{k), }
+            \DataTypeTok{sig2_a =}\NormalTok{ sig2_a),}
+        \DataTypeTok{simplify =} \OtherTok{FALSE}\NormalTok{)}
+    
+\NormalTok{    ### reduced simulated data into one dataframe}
+\NormalTok{    dat =}\StringTok{ }\KeywordTok{foreach}\NormalTok{(}
+         \DataTypeTok{idx =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(dat), }
+         \DataTypeTok{.combine =}\NormalTok{ func_combine) }\OperatorTok{%do%}\StringTok{ }\NormalTok{\{}
+\NormalTok{             df =}\StringTok{ }\NormalTok{dat[[idx]]}
+\NormalTok{             df =}\StringTok{ }\NormalTok{df }\OperatorTok{%>%}\StringTok{ }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{rename_}\NormalTok{(}
+                 \DataTypeTok{.dots=}\KeywordTok{setNames}\NormalTok{(}
+                \KeywordTok{names}\NormalTok{(.), }
+                \KeywordTok{c}\NormalTok{(}\StringTok{"Group"}\NormalTok{, }\KeywordTok{paste0}\NormalTok{(var_name, idx))))}
+\NormalTok{    \} }\CommentTok{# end do in foreach}
+    
+    \KeywordTok{return}\NormalTok{(dat)}
+\NormalTok{\} }\CommentTok{# end func}
+
+\NormalTok{##### Function to visualize the results #####}
+\NormalTok{plot_dat_sim <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(dat, variable)\{}
+    \CommentTok{# visualize simulated data with specify variables}
+    \CommentTok{# ========================================}
+    
+\NormalTok{    ### arrange the wide data frame into long format}
+\NormalTok{    df <-}\StringTok{ }\NormalTok{dat }\OperatorTok{%>%}\StringTok{ }
+\StringTok{        }\KeywordTok{select}\NormalTok{(Group, variable) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{        }\KeywordTok{gather}\NormalTok{(variable, value, }\OperatorTok{-}\NormalTok{Group)}
+    
+\NormalTok{    ### ggplot each variables color by group}
+\NormalTok{    gp <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ Group, }\DataTypeTok{y =}\NormalTok{ value, }\DataTypeTok{color =}\NormalTok{ Group)) }\OperatorTok{+}\StringTok{ }
+\StringTok{        }\KeywordTok{geom_jitter}\NormalTok{(}\DataTypeTok{width =} \FloatTok{0.2}\NormalTok{) }\OperatorTok{+}
+\StringTok{        }\KeywordTok{theme}\NormalTok{(}
+            \DataTypeTok{axis.title.y =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{10}\NormalTok{),}
+            \DataTypeTok{axis.title.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{10}\NormalTok{),}
+            \DataTypeTok{axis.text.x  =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{12}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{),}
+            \DataTypeTok{strip.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{10}\NormalTok{, }\DataTypeTok{color =} \StringTok{"grey30"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{        }\KeywordTok{facet_wrap}\NormalTok{(}\OperatorTok{~}\NormalTok{variable)}
+    
+    \KeywordTok{return}\NormalTok{(gp)}
+\NormalTok{\} }\CommentTok{# end func}
+\end{Highlighting}
+\end{Shaded}
+
+Using the function defined above, I am able to simulate data using any
+specify ICC and number of parameters. Below is just an example to
+demonstrate the functions work properly
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+Simulate data with ICC 0.3
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initialization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.5}\NormalTok{)}
+
+\NormalTok{### visualization}
+\NormalTok{gp =}\StringTok{ }\KeywordTok{plot_dat_sim}\NormalTok{(dat_sim, }\KeywordTok{c}\NormalTok{(}\StringTok{"V1"}\NormalTok{, }\StringTok{"V10"}\NormalTok{, }\StringTok{"V50"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Simulating random effects with ICC 0.3"}\NormalTok{)}
+\KeywordTok{print}\NormalTok{(gp)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+To perform kmean clustering and evaluate how well the clusters uncover
+the true groups, I implement a function that accept data and number of
+times to perform kmeans clustering. For each kmeans clustering, a
+confusion matrix between true group label and cluster id from kmeans is
+calculated. For the confusion matrix, a Hungarian algorithm is applied
+to perform cluster alignment. For a perfect clustering case, all the
+points in one cluster belongs to the same group. This calulation than
+allows me to get the points that are not cluster correctly, which I
+define them as \textbf{unmatch}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{##### function to simulate kmeans clustering with several times #####}
+\NormalTok{simulate_kmean <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(dat, iteration, }\DataTypeTok{is_mat_conf =} \OtherTok{FALSE}\NormalTok{)\{}
+\NormalTok{    ### initialization}
+\NormalTok{    unmatch =}\StringTok{ }\KeywordTok{c}\NormalTok{()}
+\NormalTok{    mat =}\StringTok{ }\NormalTok{dat }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{Group) }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.matrix}
+    
+\NormalTok{    ### perform multiple times of kmean clustering}
+    \ControlFlowTok{for}\NormalTok{ (idx }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{iteration)\{}
+\NormalTok{        ### get cluster id from kmeans}
+\NormalTok{        clust =}\StringTok{ }\KeywordTok{kmeans}\NormalTok{(mat, }\DataTypeTok{centers =} \DecValTok{3}\NormalTok{)}
+    
+\NormalTok{        ### confusion matrix}
+\NormalTok{        mat_conf =}\StringTok{ }\KeywordTok{table}\NormalTok{(clust}\OperatorTok{$}\NormalTok{cluster, dat_sim}\OperatorTok{$}\NormalTok{Group)}
+    
+\NormalTok{        ### cluster alignment}
+\NormalTok{        idx =}\StringTok{ }\KeywordTok{solve_LSAP}\NormalTok{(mat_conf, }\DataTypeTok{maximum =} \OtherTok{TRUE}\NormalTok{)}
+        
+\NormalTok{        ### calculate number of "unmatch" points}
+\NormalTok{        num =}\StringTok{ }\KeywordTok{sum}\NormalTok{(mat_conf[}\KeywordTok{cbind}\NormalTok{(}\KeywordTok{seq_along}\NormalTok{(idx), idx)])}
+\NormalTok{        unmatch =}\StringTok{ }\KeywordTok{c}\NormalTok{(unmatch, }\KeywordTok{nrow}\NormalTok{(mat) }\OperatorTok{-}\StringTok{ }\NormalTok{num) }
+\NormalTok{    \} }\CommentTok{# end for loop}
+    
+    \ControlFlowTok{if}\NormalTok{ (is_mat_conf) \{}
+\NormalTok{        ### just to demonstrate what does }
+\NormalTok{        ### the confusion matrix looks like}
+        \KeywordTok{return}\NormalTok{(}\KeywordTok{list}\NormalTok{(mat_conf, unmatch))}
+        
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{        ### normal situation, return the unmatch results}
+        \KeywordTok{return}\NormalTok{(unmatch)}
+\NormalTok{    \} }\CommentTok{# end if-else}
+    
+\NormalTok{\} }\CommentTok{# end func}
+\end{Highlighting}
+\end{Shaded}
+
+Evaluate one kmean clustering using the function defined above
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initialization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.5}\NormalTok{)}
+
+\NormalTok{### kmeans and evaluation}
+\NormalTok{res =}\StringTok{ }\KeywordTok{simulate_kmean}\NormalTok{(dat_sim, }\DecValTok{1}\NormalTok{, }\DataTypeTok{is_mat_conf =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+from the confution matrix, I know that the kmean I just ran assgin
+cluster labels correctly compared to the true label
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{print}\NormalTok{(res[[}\DecValTok{1}\NormalTok{]])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##     Grp 1 Grp 2 Grp 3
+##   1     0    33     0
+##   2     0     0    33
+##   3    33     0     0
+\end{verbatim}
+
+Since it is a ``perfect'' clustering, there is no ``unmatch'' points
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{cat}\NormalTok{(res[[}\DecValTok{2}\NormalTok{]])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 0
+\end{verbatim}
+
+Of course, we know that clustering is sometimes sensitive to the intial
+centers. Therefore, here I define two indices calculated from the
+variable ``unmatch'' by running multiple times of kmean clustering
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{expected unmatch event}: if a clustering results has more than
+  10\% unmatch points (in our case, since there are 100 data points, the
+  threshold is 10), this clustering fails to cluster points correctly
+  and an ``unmatch event'' occur. The number of unmatch event is divided
+  by the number of times the kmean clustering is perform (defined as
+  argument ``iteration'' in the function simulate\_kmean)
+\item
+  \textbf{expected number of unmatch points}: when an unmatch event
+  occur, there might be only few points that are misclustered;
+  therefore, it is important to quantify how well the clustering works
+  by counting the average points that have group label uncovered
+  uncorrectly throughout the multiple kmeans. The average is defined as
+  expected number of unmatch points. Note that the standard deviation of
+  the unmatch points is also calculated to better visualize the
+  variation of the number of unmatch points.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{#### function to calculate unmatch event and expected number of unmatch points}
+\NormalTok{summary_unmatch <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(unmatch, }\DataTypeTok{threshold =} \DecValTok{10}\NormalTok{, }\DataTypeTok{icc =} \OtherTok{NULL}\NormalTok{, }\DataTypeTok{q =} \OtherTok{NULL}\NormalTok{)\{}
+    
+\NormalTok{    ### calculate unmatch event and expected number of unmatch points }
+\NormalTok{    unmatch_events    =}\StringTok{ }\KeywordTok{mean}\NormalTok{(unmatch }\OperatorTok{>}\StringTok{ }\NormalTok{threshold)}
+\NormalTok{    unmatch_points_mu =}\StringTok{ }\KeywordTok{mean}\NormalTok{(unmatch)}
+\NormalTok{    unmatch_points_sd =}\StringTok{ }\KeywordTok{sd}\NormalTok{(unmatch)}
+    
+\NormalTok{    ### return the results}
+\NormalTok{    is_exist_icc =}\StringTok{ }\OperatorTok{!}\KeywordTok{is.null}\NormalTok{(icc)}
+\NormalTok{    is_exist_q   =}\StringTok{ }\OperatorTok{!}\KeywordTok{is.null}\NormalTok{(q)}
+    
+    \ControlFlowTok{if}\NormalTok{ (is_exist_icc }\OperatorTok{&}\StringTok{ }\NormalTok{is_exist_q)\{}
+\NormalTok{        res =}\StringTok{ }\KeywordTok{c}\NormalTok{(unmatch_events, unmatch_points_mu, unmatch_points_sd, icc, q)}
+        \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"events"}\NormalTok{, }\StringTok{"points_mu"}\NormalTok{, }\StringTok{"points_sd"}\NormalTok{, }\StringTok{"icc"}\NormalTok{, }\StringTok{"q"}\NormalTok{)}
+        
+\NormalTok{    \} }\ControlFlowTok{else} \ControlFlowTok{if}\NormalTok{ (is_exist_icc) \{}
+\NormalTok{        res =}\StringTok{ }\KeywordTok{c}\NormalTok{(unmatch_events, unmatch_points_mu, unmatch_points_sd, icc)}
+        \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"events"}\NormalTok{, }\StringTok{"points_mu"}\NormalTok{, }\StringTok{"points_sd"}\NormalTok{, }\StringTok{"icc"}\NormalTok{)}
+        
+\NormalTok{    \} }\ControlFlowTok{else} \ControlFlowTok{if}\NormalTok{ (is_exist_q) \{}
+\NormalTok{        res =}\StringTok{ }\KeywordTok{c}\NormalTok{(unmatch_events, unmatch_points_mu, unmatch_points_sd, q)}
+        \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"events"}\NormalTok{, }\StringTok{"points_mu"}\NormalTok{, }\StringTok{"points_sd"}\NormalTok{, }\StringTok{"q"}\NormalTok{)}
+        
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{        res =}\StringTok{ }\KeywordTok{c}\NormalTok{(unmatch_events, unmatch_points_mu, unmatch_points_sd)}
+        \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"events"}\NormalTok{, }\StringTok{"points_mu"}\NormalTok{, }\StringTok{"points_sd"}\NormalTok{)}
+\NormalTok{    \}}
+    
+    \KeywordTok{return}\NormalTok{(res)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+Here I use one simulated data to demonstrate the idea
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initialization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulate data}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.3}\NormalTok{)}
+
+\NormalTok{### clustering}
+\NormalTok{unmatch =}\StringTok{ }\KeywordTok{simulate_kmean}\NormalTok{(dat_sim, }\DecValTok{100}\NormalTok{)}
+
+\NormalTok{### visualization}
+\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{x =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(unmatch), }\DataTypeTok{y =}\NormalTok{ unmatch) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{ggplot}\NormalTok{(., }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_line}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x =} \StringTok{"iteration"}\NormalTok{, }\DataTypeTok{y =} \StringTok{"number of points mismatch"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-12-1.pdf}
+
+by the plot above, we can easiy calculate the unmatch events is 9 / 100
+= 0.09
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary_unmatch}\NormalTok{(unmatch)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    events points_mu points_sd 
+##   0.09000   4.18000  13.36842
+\end{verbatim}
+
+\subsubsection{Q1 (b)}\label{q1-b}
+
+\textbf{Simulate additional datasets, varying the ICC. Apply K-means
+clustering with k = 3. Evaluate how well your able to uncover the true
+cluster labels. Visualize your results and comment on the ``required''
+ICC for effective clustering.}
+
+By defining unmatch events and unmatch points, I am able to evaluate the
+efficiency of kmean clustering for each datasets generated with
+different ICC
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initialization}
+\NormalTok{iccs =}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\FloatTok{0.1}\NormalTok{, }\FloatTok{1.0}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{10}\NormalTok{)}
+\NormalTok{ITER_KM =}\StringTok{ }\DecValTok{500}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation and evaluation}
+\NormalTok{res_km_icc =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (icc }\ControlFlowTok{in}\NormalTok{ iccs)\{}
+    \KeywordTok{cat}\NormalTok{(}\StringTok{"icc:"}\NormalTok{, icc, }\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\NormalTok{    dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(icc)}
+\NormalTok{    unmatch =}\StringTok{ }\KeywordTok{simulate_kmean}\NormalTok{(dat_sim, ITER_KM)}
+\NormalTok{    unmatch_sum =}\StringTok{ }\KeywordTok{summary_unmatch}\NormalTok{(unmatch, }\DataTypeTok{icc =}\NormalTok{ icc)}
+    
+\NormalTok{    res_km_icc =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_km_icc, unmatch_sum)}
+\NormalTok{\} }\CommentTok{# end for loop}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## icc: 0.1 
+## icc: 0.2 
+## icc: 0.3 
+## icc: 0.4 
+## icc: 0.5 
+## icc: 0.6 
+## icc: 0.7 
+## icc: 0.8 
+## icc: 0.9 
+## icc: 1
+\end{verbatim}
+
+By visualizing the results, we could observe how unmatch events and
+points varied throughout different kmean clustering. When ICC is 0.1,
+none of the clustering results is perfect and about
+10\textasciitilde{}15 points are always clustered uncorrectly. As ICC
+increases from 0.1 to 0.2, probability of unmatch events drop
+dramatically and once ICC reaches to 1.0, all the clustering results are
+perfect and therefore, all points have cluster ids and true group labels
+``matched'' correctly.
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-15-1.pdf}
+
+\subsubsection{Q1 (c)}\label{q1-c}
+
+\textbf{Choose the minimum ICC from above where you think you can
+uncover the clusters. Keep n and p the same but vary the number of
+variables that have an ICC. i.e.~some q \textless{} p will have an ICC
+where the rest will have an ICC of 0. These variables with ICC = 0 are
+called noise." Assess the impact of the amount of noise variables on
+ability to recapture clusters.}
+
+First, I set the function to add ``noisy'' parameters in data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{simulate_data_noise <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(icc, q, }\DataTypeTok{k =}\NormalTok{ K, }\DataTypeTok{n =}\NormalTok{ N, }\DataTypeTok{sig2_a =}\NormalTok{ SIG2_ALPHA, }\DataTypeTok{p =}\NormalTok{ P, }\DataTypeTok{func_sim_data =}\NormalTok{ simulate_data)\{}
+    
+\NormalTok{    ### assert if q is larger than p}
+    \ControlFlowTok{if}\NormalTok{ (q }\OperatorTok{>}\StringTok{ }\NormalTok{p)\{}
+        \KeywordTok{cat}\NormalTok{(}\StringTok{"ERROR: argument q > p"}\NormalTok{)}
+\NormalTok{    \}}
+    
+\NormalTok{    ### special case}
+    \ControlFlowTok{if}\NormalTok{ (q }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{)\{}
+\NormalTok{        dat =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.00001}\NormalTok{)}
+        
+\NormalTok{    \} }\ControlFlowTok{else} \ControlFlowTok{if}\NormalTok{ (q }\OperatorTok{==}\StringTok{ }\DecValTok{50}\NormalTok{) \{}
+\NormalTok{        dat =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(icc)}
+        
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{    ### normal case where q != p}
+\NormalTok{        n1 =}\StringTok{ }\NormalTok{q}
+\NormalTok{        n2 =}\StringTok{ }\NormalTok{p}\OperatorTok{-}\NormalTok{q}
+    
+\NormalTok{        ### simulate two data: one with specified icc and another one with extreme small icc}
+\NormalTok{        dat1 =}\StringTok{ }\KeywordTok{func_sim_data}\NormalTok{(icc,    k, n, sig2_a, n1, }\DataTypeTok{var_name =} \StringTok{"V"}\NormalTok{)}
+\NormalTok{        dat2 =}\StringTok{ }\KeywordTok{func_sim_data}\NormalTok{(}\FloatTok{0.00001}\NormalTok{, k, n, sig2_a, n2, }\DataTypeTok{var_name =} \StringTok{"N"}\NormalTok{)}
+        
+\NormalTok{        ### combine the results}
+\NormalTok{        tmp =}\StringTok{ }\NormalTok{dat2 }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{Group)}
+\NormalTok{        dat =}\StringTok{ }\KeywordTok{bind_cols}\NormalTok{(dat1, tmp)}
+\NormalTok{    \} }\CommentTok{# end if else}
+    
+    \KeywordTok{return}\NormalTok{(dat)}
+\NormalTok{\} }\CommentTok{# end func}
+\end{Highlighting}
+\end{Shaded}
+
+Check if the simulation works properly
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initialization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data_noise}\NormalTok{(}\FloatTok{0.1}\NormalTok{, }\DecValTok{10}\NormalTok{)}
+
+\NormalTok{### visualization}
+\NormalTok{gp =}\StringTok{ }\KeywordTok{plot_dat_sim}\NormalTok{(dat_sim, }\KeywordTok{c}\NormalTok{(}\StringTok{"V1"}\NormalTok{, }\StringTok{"V10"}\NormalTok{, }\StringTok{"N1"}\NormalTok{, }\StringTok{"N2"}\NormalTok{))}
+\KeywordTok{print}\NormalTok{(gp)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-17-1.pdf}
+
+The results of the impact of noise is showed together with the
+simulation in the next question.
+
+\subsubsection{Q1 (d)}\label{q1-d}
+
+\textbf{Perform the two analyses above across a full grid of ICCs and
+noise.Evaluate your results. What patterns do you see? Is there an
+interaction between noise and ICC?}
+
+simulation with different ICC and noise
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### intialization}
+\NormalTok{iccs =}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\FloatTok{0.1}\NormalTok{, }\FloatTok{1.0}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{10}\NormalTok{)}
+\NormalTok{qs   =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{25}\NormalTok{, }\DecValTok{49}\NormalTok{, }\DecValTok{50}\NormalTok{)}
+\NormalTok{ITER_KM =}\StringTok{ }\DecValTok{500}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation and collect the results}
+\NormalTok{res_km_icc_q =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (icc }\ControlFlowTok{in}\NormalTok{ iccs)\{}
+    \KeywordTok{cat}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{icc:"}\NormalTok{, icc)}
+    
+    \ControlFlowTok{for}\NormalTok{ (q }\ControlFlowTok{in}\NormalTok{ qs)\{}
+        \KeywordTok{cat}\NormalTok{(}\StringTok{"#"}\NormalTok{)}
+        
+\NormalTok{        dat_sim =}\StringTok{ }\KeywordTok{simulate_data_noise}\NormalTok{(icc, q)}
+        
+\NormalTok{        unmatch =}\StringTok{ }\KeywordTok{simulate_kmean}\NormalTok{(dat_sim, ITER_KM)}
+\NormalTok{        unmatch_sum =}\StringTok{ }\KeywordTok{summary_unmatch}\NormalTok{(unmatch, }\DataTypeTok{icc =}\NormalTok{ icc, }\DataTypeTok{q =}\NormalTok{ q)}
+        
+\NormalTok{        res_km_icc_q =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_km_icc_q, unmatch_sum)}
+\NormalTok{    \} }\CommentTok{# end for loop}
+\NormalTok{\} }\CommentTok{# end for loop}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## icc: 0.1#####
+## icc: 0.2#####
+## icc: 0.3#####
+## icc: 0.4#####
+## icc: 0.5#####
+## icc: 0.6#####
+## icc: 0.7#####
+## icc: 0.8#####
+## icc: 0.9#####
+## icc: 1#####
+\end{verbatim}
+
+Visualize the results: when q = 50, the pattern is exactly the same as
+we show above, where no parameters has ICC \textasciitilde{} 0. However,
+from the number of unmatched events, I supprisingly observed that once a
+pure ``noisy'' parameters (parameter with ICC \textasciitilde{} 0) is
+added, the kmeans clustering performs very unefficiently. None of the
+kmeans clustering results is ``perfect''.
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-19-1.pdf}
+
+\subsection{Q2 PCA and Clustering}\label{q2-pca-and-clustering}
+
+\textbf{While PCA solves a different problem than clustering it is also
+used to find structure in data. }
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{#### helper function to visualize the PCA results}
+\NormalTok{plot_pca_scree <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(res_pca)\{}
+\NormalTok{    ###}
+\NormalTok{    x =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{sdev}
+\NormalTok{    x =}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}
+\NormalTok{    x =}\StringTok{ }\NormalTok{x }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(x)}
+  
+\NormalTok{    ###}
+\NormalTok{    df =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+        \DataTypeTok{PC   =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(x),}
+        \DataTypeTok{prop =}\NormalTok{ x, }
+        \DataTypeTok{cump =} \KeywordTok{cumsum}\NormalTok{(x))}
+
+\NormalTok{    idx =}\StringTok{ }\KeywordTok{which}\NormalTok{(df}\OperatorTok{$}\NormalTok{cump }\OperatorTok{>}\StringTok{ }\FloatTok{0.9}\NormalTok{)[}\DecValTok{1}\NormalTok{]}
+
+\NormalTok{    ###   }
+\NormalTok{    gp1 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ prop))}
+\NormalTok{    gp1 =}\StringTok{ }\NormalTok{gp1 }\OperatorTok{+}
+\StringTok{       }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{       }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ prop, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{)) }\OperatorTok{+}
+\StringTok{       }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x =} \StringTok{"Number of PC"}\NormalTok{,}
+            \DataTypeTok{y =} \StringTok{"Proportion of}\CharTok{\textbackslash{}n}\StringTok{explained variance"}\NormalTok{)}
+
+\NormalTok{    gp2 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ cump))    }
+\NormalTok{    gp2 =}\StringTok{ }\NormalTok{gp2 }\OperatorTok{+}
+\StringTok{        }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{        }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ cump, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{)) }\OperatorTok{+}
+\StringTok{        }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \KeywordTok{paste}\NormalTok{(}\StringTok{"#PC to explained 90% of variance:"}\NormalTok{, idx),}
+             \DataTypeTok{x =} \StringTok{"Number of PC"}\NormalTok{,}
+             \DataTypeTok{y =} \StringTok{"Cumulative proportion of}\CharTok{\textbackslash{}n}\StringTok{explained variance"}\NormalTok{)}
+    
+    \KeywordTok{return}\NormalTok{(}\KeywordTok{list}\NormalTok{(gp1, gp2))}
+\NormalTok{\} }\CommentTok{# end func}
+
+
+\NormalTok{#### helper function to visualize the PCA results}
+\NormalTok{plot_pca_score <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(res_pca, }\DataTypeTok{vec_for_color =} \OtherTok{NULL}\NormalTok{)\{}
+    
+\NormalTok{    x =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{sdev}
+\NormalTok{    x =}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}
+\NormalTok{    x =}\StringTok{ }\NormalTok{x }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(x)}
+    
+    \ControlFlowTok{if}\NormalTok{ (}\KeywordTok{is.null}\NormalTok{(vec_for_color))\{}
+\NormalTok{        gp =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+            \DataTypeTok{pc1 =}\NormalTok{ res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{1}\NormalTok{],}
+            \DataTypeTok{pc2 =}\NormalTok{ res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{2}\NormalTok{]) }\OperatorTok{%>%}
+\StringTok{            }\KeywordTok{ggplot}\NormalTok{(., }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2))}
+        
+\NormalTok{    \} }\ControlFlowTok{else}\NormalTok{ \{}
+\NormalTok{        gp =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+            \DataTypeTok{pc1 =}\NormalTok{ res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{1}\NormalTok{],}
+            \DataTypeTok{pc2 =}\NormalTok{ res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{2}\NormalTok{],}
+            \DataTypeTok{x_col =}\NormalTok{ vec_for_color) }\OperatorTok{%>%}
+\StringTok{            }\KeywordTok{ggplot}\NormalTok{(., }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2, }\DataTypeTok{color =}\NormalTok{ x_col))}
+\NormalTok{    \} }\CommentTok{# end if-else}
+    
+\NormalTok{    gp =}\StringTok{ }\NormalTok{gp }\OperatorTok{+}
+\StringTok{        }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{        }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x =} \KeywordTok{paste}\NormalTok{(}\StringTok{"PC1:"}\NormalTok{, }\KeywordTok{round}\NormalTok{(x[}\DecValTok{1}\NormalTok{], }\DecValTok{3}\NormalTok{) }\OperatorTok{*}\StringTok{ }\DecValTok{100}\NormalTok{, }\StringTok{"%"}\NormalTok{),}
+             \DataTypeTok{y =} \KeywordTok{paste}\NormalTok{(}\StringTok{"PC2:"}\NormalTok{, }\KeywordTok{round}\NormalTok{(x[}\DecValTok{2}\NormalTok{], }\DecValTok{3}\NormalTok{) }\OperatorTok{*}\StringTok{ }\DecValTok{100}\NormalTok{, }\StringTok{"%"}\NormalTok{),}
+            \DataTypeTok{title =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Total variation explained:"}\NormalTok{, }
+                          \KeywordTok{round}\NormalTok{(x[}\DecValTok{1}\NormalTok{] }\OperatorTok{+}\StringTok{ }\NormalTok{x[}\DecValTok{2}\NormalTok{], }\DecValTok{3}\NormalTok{) }\OperatorTok{*}\StringTok{ }\DecValTok{100}\NormalTok{,}
+                          \StringTok{"%"}\NormalTok{))}
+
+    \KeywordTok{return}\NormalTok{(gp)}
+\NormalTok{\} }\CommentTok{# end func}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Q2 (a)}\label{q2-a}
+
+\textbf{Choose a dataset from 1b where you were able to uncover
+clusters. Apply PCA. How many meaningful PCs do you find? Plot PC1 vs
+PC2.}
+
+Here I used ICC = 0.3, and the result shows that there are about two
+meaningful PCs.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initalization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.3}\NormalTok{)}
+
+\NormalTok{### PCA analysis}
+\NormalTok{dat     =}\StringTok{ }\NormalTok{dat_sim }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{Group)}
+\NormalTok{res_pca =}\StringTok{ }\KeywordTok{princomp}\NormalTok{(dat)}
+
+\NormalTok{### visualization}
+\NormalTok{gp =}\StringTok{ }\KeywordTok{plot_pca_scree}\NormalTok{(res_pca)}
+\KeywordTok{grid.arrange}\NormalTok{(gp[[}\DecValTok{1}\NormalTok{]] }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"ICC: 0.3"}\NormalTok{), }
+\NormalTok{             gp[[}\DecValTok{2}\NormalTok{]])}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-21-1.pdf}
+
+The number PCs required to explain 90\% of total variance decrease when
+ICC increase
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{### initalization}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{### simulation}
+\NormalTok{dat_sim =}\StringTok{ }\KeywordTok{simulate_data}\NormalTok{(}\FloatTok{0.9}\NormalTok{)}
+
+\NormalTok{### PCA analysis}
+\NormalTok{dat     =}\StringTok{ }\NormalTok{dat_sim }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{Group)}
+\NormalTok{res_pca =}\StringTok{ }\KeywordTok{princomp}\NormalTok{(dat)}
+
+\NormalTok{### visualization}
+\NormalTok{gp =}\StringTok{ }\KeywordTok{plot_pca_scree}\NormalTok{(res_pca)}
+\KeywordTok{grid.arrange}\NormalTok{(gp[[}\DecValTok{1}\NormalTok{]] }\OperatorTok{+}\StringTok{ }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"ICC: 0.9"}\NormalTok{), }
+\NormalTok{             gp[[}\DecValTok{2}\NormalTok{]])}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v4_files/figure-latex/unnamed-chunk-22-1.pdf}
+
+\subsubsection{Q2 (b)}\label{q2-b}
+
+\textbf{Repeat but set the number of groups k to be 4. What
+relationships do you notice between the number of ``true groups'' and
+the number} of meaningful components.
+
+
+\end{document}

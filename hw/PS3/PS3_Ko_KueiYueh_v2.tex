@@ -1,0 +1,1313 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={R Notebook},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{R Notebook}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+read in data
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching packages ----------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
+\end{verbatim}
+
+\begin{verbatim}
+## √ ggplot2 3.0.0     √ purrr   0.2.5
+## √ tibble  1.4.2     √ dplyr   0.7.6
+## √ tidyr   0.8.1     √ stringr 1.3.1
+## √ readr   1.1.1     √ forcats 0.3.0
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts -------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(gridExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'gridExtra'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     combine
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(cluster)}
+\KeywordTok{library}\NormalTok{(pheatmap)}
+\KeywordTok{library}\NormalTok{(pROC)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Type 'citation("pROC")' for a citation.
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'pROC'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     cov, smooth, var
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(RColorBrewer)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dat_mice =}\StringTok{ }\KeywordTok{read_csv}\NormalTok{(}\StringTok{"./Data_Cortex_Nuclear.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Parsed with column specification:
+## cols(
+##   .default = col_double(),
+##   MouseID = col_character(),
+##   Genotype = col_character(),
+##   Treatment = col_character(),
+##   Behavior = col_character(),
+##   class = col_character()
+## )
+\end{verbatim}
+
+\begin{verbatim}
+## See spec(...) for full column specifications.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{head}\NormalTok{(dat_mice)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 82
+##   MouseID DYRK1A_N ITSN1_N BDNF_N NR1_N NR2A_N pAKT_N pBRAF_N pCAMKII_N
+##   <chr>      <dbl>   <dbl>  <dbl> <dbl>  <dbl>  <dbl>   <dbl>     <dbl>
+## 1 309_1      0.504   0.747  0.430  2.82   5.99  0.219   0.178      2.37
+## 2 309_2      0.515   0.689  0.412  2.79   5.69  0.212   0.173      2.29
+## 3 309_3      0.509   0.730  0.418  2.69   5.62  0.209   0.176      2.28
+## 4 309_4      0.442   0.617  0.359  2.47   4.98  0.223   0.176      2.15
+## 5 309_5      0.435   0.617  0.359  2.37   4.72  0.213   0.174      2.13
+## 6 309_6      0.448   0.628  0.367  2.39   4.81  0.219   0.176      2.14
+## # ... with 73 more variables: pCREB_N <dbl>, pELK_N <dbl>, pERK_N <dbl>,
+## #   pJNK_N <dbl>, PKCA_N <dbl>, pMEK_N <dbl>, pNR1_N <dbl>, pNR2A_N <dbl>,
+## #   pNR2B_N <dbl>, pPKCAB_N <dbl>, pRSK_N <dbl>, AKT_N <dbl>,
+## #   BRAF_N <dbl>, CAMKII_N <dbl>, CREB_N <dbl>, ELK_N <dbl>, ERK_N <dbl>,
+## #   GSK3B_N <dbl>, JNK_N <dbl>, MEK_N <dbl>, TRKA_N <dbl>, RSK_N <dbl>,
+## #   APP_N <dbl>, Bcatenin_N <dbl>, SOD1_N <dbl>, MTOR_N <dbl>,
+## #   P38_N <dbl>, pMTOR_N <dbl>, DSCR1_N <dbl>, AMPKA_N <dbl>,
+## #   NR2B_N <dbl>, pNUMB_N <dbl>, RAPTOR_N <dbl>, TIAM1_N <dbl>,
+## #   pP70S6_N <dbl>, NUMB_N <dbl>, P70S6_N <dbl>, pGSK3B_N <dbl>,
+## #   pPKCG_N <dbl>, CDK5_N <dbl>, S6_N <dbl>, ADARB1_N <dbl>,
+## #   AcetylH3K9_N <dbl>, RRP1_N <dbl>, BAX_N <dbl>, ARC_N <dbl>,
+## #   ERBB4_N <dbl>, nNOS_N <dbl>, Tau_N <dbl>, GFAP_N <dbl>, GluR3_N <dbl>,
+## #   GluR4_N <dbl>, IL1B_N <dbl>, P3525_N <dbl>, pCASP9_N <dbl>,
+## #   PSD95_N <dbl>, SNCA_N <dbl>, Ubiquitin_N <dbl>, pGSK3B_Tyr216_N <dbl>,
+## #   SHH_N <dbl>, BAD_N <dbl>, BCL2_N <dbl>, pS6_N <dbl>, pCFOS_N <dbl>,
+## #   SYP_N <dbl>, H3AcK18_N <dbl>, EGR1_N <dbl>, H3MeK4_N <dbl>,
+## #   CaNA_N <dbl>, Genotype <chr>, Treatment <chr>, Behavior <chr>,
+## #   class <chr>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{dim}\NormalTok{(dat_mice)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1080   82
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{idx =}\StringTok{ }\NormalTok{dat_mice }\OperatorTok{%>%}\StringTok{ }\NormalTok{is.na }\OperatorTok{%>%}\StringTok{ }\NormalTok{colMeans }\OperatorTok{%>%}\StringTok{ `}\DataTypeTok{<}\StringTok{`}\NormalTok{(}\FloatTok{0.1}\NormalTok{)}
+\NormalTok{dat =}\StringTok{ }\NormalTok{dat_mice[, idx]}
+\NormalTok{dat }\OperatorTok{%>%}\StringTok{ }\NormalTok{ncol}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 77
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{idx =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"MouseID"}\NormalTok{, }\StringTok{"Genotype"}\NormalTok{, }\StringTok{"Treatment"}\NormalTok{, }\StringTok{"Behavior"}\NormalTok{, }\StringTok{"class"}\NormalTok{)}
+\NormalTok{dat_pheno =}\StringTok{ }\NormalTok{dat_mice }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(idx)}
+\NormalTok{dat_exprs =}\StringTok{ }\NormalTok{dat_mice }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{idx)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{single_mean_impute =}\StringTok{ }\ControlFlowTok{function}\NormalTok{(dat)\{}
+\NormalTok{    dat_imputed =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(dat, }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{        mu =}\StringTok{ }\KeywordTok{mean}\NormalTok{(x, }\DataTypeTok{na.rm =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{        x[}\KeywordTok{is.na}\NormalTok{(x)] =}\StringTok{ }\NormalTok{mu}
+        \KeywordTok{return}\NormalTok{(x)}
+\NormalTok{    \})}
+    \KeywordTok{return}\NormalTok{(}\KeywordTok{do.call}\NormalTok{(cbind, dat_imputed))}
+\NormalTok{\} }\CommentTok{# end func}
+
+\NormalTok{dat_exprs_imp =}\StringTok{ }\KeywordTok{single_mean_impute}\NormalTok{(dat_exprs) }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.tibble}
+\end{Highlighting}
+\end{Shaded}
+
+PCA
+
+\url{https://stackoverflow.com/questions/47243288/ggplot2-vertical-lines-from-data-points-in-grouped-scatter-plot}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{res_pca =}\StringTok{ }\KeywordTok{princomp}\NormalTok{(dat_exprs_imp)}
+
+\NormalTok{###}
+\NormalTok{x =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{sdev}
+\NormalTok{x =}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}
+\NormalTok{x =}\StringTok{ }\NormalTok{x }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(x)}
+
+\NormalTok{###}
+\NormalTok{df =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+    \DataTypeTok{PC   =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(x),}
+    \DataTypeTok{prop =}\NormalTok{ x, }
+    \DataTypeTok{cump =} \KeywordTok{cumsum}\NormalTok{(x))}
+
+\NormalTok{idx =}\StringTok{ }\KeywordTok{which}\NormalTok{(df}\OperatorTok{$}\NormalTok{cump }\OperatorTok{>}\StringTok{ }\FloatTok{0.9}\NormalTok{)[}\DecValTok{1}\NormalTok{]}
+
+\NormalTok{###}
+\NormalTok{gp1 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ prop))}
+\NormalTok{gp1 =}\StringTok{ }\NormalTok{gp1 }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ prop, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{))}
+
+\NormalTok{gp2 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ cump))}
+\NormalTok{gp2 =}\StringTok{ }\NormalTok{gp2 }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ cump, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \KeywordTok{paste}\NormalTok{(}\StringTok{"90% PC:"}\NormalTok{, idx))}
+
+\KeywordTok{grid.arrange}\NormalTok{(gp1, gp2, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+about two meaningful PCs
+
+scale the data and repeat
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{dat_exprs_scale =}\StringTok{ }\KeywordTok{scale}\NormalTok{(dat_exprs_imp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{res_pca =}\StringTok{ }\KeywordTok{princomp}\NormalTok{(dat_exprs_scale)}
+
+\NormalTok{###}
+\NormalTok{x =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{sdev}
+\NormalTok{x =}\StringTok{ }\NormalTok{x}\OperatorTok{^}\DecValTok{2}
+\NormalTok{x =}\StringTok{ }\NormalTok{x }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(x)}
+
+\NormalTok{###}
+\NormalTok{df =}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+    \DataTypeTok{PC   =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(x),}
+    \DataTypeTok{prop =}\NormalTok{ x, }
+    \DataTypeTok{cump =} \KeywordTok{cumsum}\NormalTok{(x))}
+
+\NormalTok{idx =}\StringTok{ }\KeywordTok{which}\NormalTok{(df}\OperatorTok{$}\NormalTok{cump }\OperatorTok{>}\StringTok{ }\FloatTok{0.9}\NormalTok{)[}\DecValTok{1}\NormalTok{]}
+
+\NormalTok{gp1 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ prop))}
+\NormalTok{gp1 =}\StringTok{ }\NormalTok{gp1 }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ prop, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{))}
+
+\NormalTok{gp2 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ PC, }\DataTypeTok{y =}\NormalTok{ cump))}
+\NormalTok{gp2 =}\StringTok{ }\NormalTok{gp2 }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_point}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_linerange}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{ymax =}\NormalTok{ cump, }\DataTypeTok{ymin =} \DecValTok{0}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \KeywordTok{paste}\NormalTok{(}\StringTok{"90% PC:"}\NormalTok{, idx))}
+
+\KeywordTok{grid.arrange}\NormalTok{(gp1, gp2, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{colnames}\NormalTok{(dat_pheno)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "MouseID"   "Genotype"  "Treatment" "Behavior"  "class"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{res_pca =}\StringTok{ }\KeywordTok{princomp}\NormalTok{(dat_exprs_imp)}
+
+\NormalTok{df =}\StringTok{ }\NormalTok{dat_pheno}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc1 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{1}\NormalTok{]}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc2 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{2}\NormalTok{]}
+
+
+\NormalTok{my_geom =}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{)}
+
+\NormalTok{gp1 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2, }\DataTypeTok{color =}\NormalTok{ Genotype)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\NormalTok{my_geom }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Genotype"}\NormalTok{)}
+
+\NormalTok{gp2 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2, }\DataTypeTok{color =}\NormalTok{ Treatment)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\NormalTok{my_geom }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Treatment"}\NormalTok{)}
+
+\NormalTok{gp3 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2, }\DataTypeTok{color =}\NormalTok{ Behavior)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\NormalTok{my_geom }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Behavior"}\NormalTok{)}
+
+\NormalTok{gp4 =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ pc1, }\DataTypeTok{y =}\NormalTok{ pc2, }\DataTypeTok{color =}\NormalTok{ class)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\NormalTok{my_geom }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"class"}\NormalTok{)}
+
+\KeywordTok{grid.arrange}\NormalTok{(gp1, gp2, gp3, gp4, }\DataTypeTok{nrow =} \DecValTok{2}\NormalTok{, }\DataTypeTok{ncol =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-11-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{3}
+\item
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \tightlist
+  \item
+    logistic regression
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df =}\StringTok{ }\NormalTok{dat_exprs_imp}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\NormalTok{dat_pheno}\OperatorTok{$}\NormalTok{Genotype}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Control"}\NormalTok{, }\StringTok{"Ts65Dn"}\NormalTok{))}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype) }\OperatorTok{-}\StringTok{ }\DecValTok{1}
+
+\NormalTok{fit_logit =}\StringTok{ }\KeywordTok{glm}\NormalTok{(Genotype }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ df, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: glm.fit: algorithm did not converge
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{summary}\NormalTok{(fit_logit)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = Genotype ~ ., family = binomial(link = "logit"), 
+##     data = df)
+## 
+## Deviance Residuals: 
+##        Min          1Q      Median          3Q         Max  
+## -1.285e-04  -2.100e-08  -2.100e-08   2.100e-08   1.359e-04  
+## 
+## Coefficients: (1 not defined because of singularities)
+##                   Estimate Std. Error z value Pr(>|z|)
+## (Intercept)     -1.618e+02  4.120e+05   0.000    1.000
+## DYRK1A_N         2.453e+02  2.639e+05   0.001    0.999
+## ITSN1_N          1.354e+03  2.923e+05   0.005    0.996
+## BDNF_N           7.068e+02  5.379e+05   0.001    0.999
+## NR1_N           -2.529e+02  2.009e+05  -0.001    0.999
+## NR2A_N          -1.912e+01  7.033e+04   0.000    1.000
+## pAKT_N           7.744e+02  9.723e+05   0.001    0.999
+## pBRAF_N          4.460e+02  8.416e+05   0.001    1.000
+## pCAMKII_N       -2.163e+01  2.265e+04  -0.001    0.999
+## pCREB_N          1.333e+03  1.006e+06   0.001    0.999
+## pELK_N          -1.836e+02  1.130e+05  -0.002    0.999
+## pERK_N          -1.519e+02  5.123e+04  -0.003    0.998
+## pJNK_N           5.597e+02  1.839e+06   0.000    1.000
+## PKCA_N           1.977e+03  1.228e+06   0.002    0.999
+## pMEK_N          -8.281e+02  1.040e+06  -0.001    0.999
+## pNR1_N          -2.992e+02  4.083e+05  -0.001    0.999
+## pNR2A_N          9.222e+01  4.229e+05   0.000    1.000
+## pNR2B_N          9.261e+01  2.307e+05   0.000    1.000
+## pPKCAB_N        -1.000e+02  1.768e+05  -0.001    1.000
+## pRSK_N          -1.217e+03  4.486e+05  -0.003    0.998
+## AKT_N            4.345e+02  6.011e+05   0.001    0.999
+## BRAF_N          -1.131e+03  3.326e+05  -0.003    0.997
+## CAMKII_N        -1.153e+03  6.789e+05  -0.002    0.999
+## CREB_N          -2.139e+03  1.938e+06  -0.001    0.999
+## ELK_N           -3.825e+02  2.307e+05  -0.002    0.999
+## ERK_N           -2.867e+02  1.667e+05  -0.002    0.999
+## GSK3B_N          2.002e+02  2.006e+05   0.001    0.999
+## JNK_N            7.427e+01  8.395e+05   0.000    1.000
+## MEK_N            8.090e+02  1.590e+06   0.001    1.000
+## TRKA_N           3.354e+02  7.259e+05   0.000    1.000
+## RSK_N            5.316e+02  1.711e+06   0.000    1.000
+## APP_N            1.240e+03  4.206e+05   0.003    0.998
+## Bcatenin_N       5.646e+01  1.674e+05   0.000    1.000
+## SOD1_N           2.082e+02  1.702e+05   0.001    0.999
+## MTOR_N          -8.083e+02  9.781e+05  -0.001    0.999
+## P38_N            2.042e+02  1.010e+06   0.000    1.000
+## pMTOR_N          1.436e+02  6.321e+05   0.000    1.000
+## DSCR1_N          2.193e+02  4.589e+05   0.000    1.000
+## AMPKA_N         -1.321e+03  7.213e+05  -0.002    0.999
+## NR2B_N          -1.356e+02  4.405e+05   0.000    1.000
+## pNUMB_N          1.135e+02  1.382e+06   0.000    1.000
+## RAPTOR_N        -7.628e+02  1.106e+06  -0.001    0.999
+## TIAM1_N          1.772e+03  5.749e+05   0.003    0.998
+## pP70S6_N         1.670e+02  1.991e+05   0.001    0.999
+## NUMB_N           9.661e+02  1.845e+06   0.001    1.000
+## P70S6_N          2.282e+02  1.932e+05   0.001    0.999
+## pGSK3B_N         2.564e+03  1.370e+06   0.002    0.999
+## pPKCG_N         -5.983e+01  6.412e+04  -0.001    0.999
+## CDK5_N           3.772e+02  1.946e+05   0.002    0.998
+## S6_N            -4.547e+01  4.652e+05   0.000    1.000
+## ADARB1_N         1.006e+02  5.025e+04   0.002    0.998
+## AcetylH3K9_N     4.827e+01  4.495e+05   0.000    1.000
+## RRP1_N           1.203e+02  5.742e+05   0.000    1.000
+## BAX_N           -2.101e+03  1.994e+06  -0.001    0.999
+## ARC_N           -3.173e+03  2.962e+06  -0.001    0.999
+## ERBB4_N          2.981e+03  2.215e+06   0.001    0.999
+## nNOS_N          -2.592e+02  1.071e+06   0.000    1.000
+## Tau_N            4.785e+02  9.359e+05   0.001    1.000
+## GFAP_N          -2.173e+03  1.760e+06  -0.001    0.999
+## GluR3_N         -1.849e+03  9.172e+05  -0.002    0.998
+## GluR4_N          5.663e+01  4.150e+05   0.000    1.000
+## IL1B_N          -4.035e+02  9.703e+05   0.000    1.000
+## P3525_N          1.422e+03  8.995e+05   0.002    0.999
+## pCASP9_N        -1.073e+02  1.248e+05  -0.001    0.999
+## PSD95_N          2.820e+02  8.907e+04   0.003    0.997
+## SNCA_N           8.942e+00  8.981e+05   0.000    1.000
+## Ubiquitin_N      9.135e+01  2.394e+05   0.000    1.000
+## pGSK3B_Tyr216_N -3.567e+02  5.580e+05  -0.001    0.999
+## SHH_N           -1.835e+03  7.571e+05  -0.002    0.998
+## BAD_N            3.677e+02  1.109e+06   0.000    1.000
+## BCL2_N           1.035e+03  1.405e+06   0.001    0.999
+## pS6_N                   NA         NA      NA       NA
+## pCFOS_N          7.055e+01  9.390e+05   0.000    1.000
+## SYP_N           -5.666e+02  4.126e+05  -0.001    0.999
+## H3AcK18_N       -4.094e+02  6.210e+05  -0.001    0.999
+## EGR1_N           3.916e+02  7.859e+05   0.000    1.000
+## H3MeK4_N        -2.740e+02  6.107e+05   0.000    1.000
+## CaNA_N           1.770e+02  1.065e+05   0.002    0.999
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1.4939e+03  on 1079  degrees of freedom
+## Residual deviance: 3.2527e-07  on 1003  degrees of freedom
+## AIC: 154
+## 
+## Number of Fisher Scoring iterations: 25
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{head}\NormalTok{(dat_exprs_imp, }\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 2 x 77
+##   DYRK1A_N ITSN1_N BDNF_N NR1_N NR2A_N pAKT_N pBRAF_N pCAMKII_N pCREB_N
+##      <dbl>   <dbl>  <dbl> <dbl>  <dbl>  <dbl>   <dbl>     <dbl>   <dbl>
+## 1    0.504   0.747  0.430  2.82   5.99  0.219   0.178      2.37   0.232
+## 2    0.515   0.689  0.412  2.79   5.69  0.212   0.173      2.29   0.227
+## # ... with 68 more variables: pELK_N <dbl>, pERK_N <dbl>, pJNK_N <dbl>,
+## #   PKCA_N <dbl>, pMEK_N <dbl>, pNR1_N <dbl>, pNR2A_N <dbl>,
+## #   pNR2B_N <dbl>, pPKCAB_N <dbl>, pRSK_N <dbl>, AKT_N <dbl>,
+## #   BRAF_N <dbl>, CAMKII_N <dbl>, CREB_N <dbl>, ELK_N <dbl>, ERK_N <dbl>,
+## #   GSK3B_N <dbl>, JNK_N <dbl>, MEK_N <dbl>, TRKA_N <dbl>, RSK_N <dbl>,
+## #   APP_N <dbl>, Bcatenin_N <dbl>, SOD1_N <dbl>, MTOR_N <dbl>,
+## #   P38_N <dbl>, pMTOR_N <dbl>, DSCR1_N <dbl>, AMPKA_N <dbl>,
+## #   NR2B_N <dbl>, pNUMB_N <dbl>, RAPTOR_N <dbl>, TIAM1_N <dbl>,
+## #   pP70S6_N <dbl>, NUMB_N <dbl>, P70S6_N <dbl>, pGSK3B_N <dbl>,
+## #   pPKCG_N <dbl>, CDK5_N <dbl>, S6_N <dbl>, ADARB1_N <dbl>,
+## #   AcetylH3K9_N <dbl>, RRP1_N <dbl>, BAX_N <dbl>, ARC_N <dbl>,
+## #   ERBB4_N <dbl>, nNOS_N <dbl>, Tau_N <dbl>, GFAP_N <dbl>, GluR3_N <dbl>,
+## #   GluR4_N <dbl>, IL1B_N <dbl>, P3525_N <dbl>, pCASP9_N <dbl>,
+## #   PSD95_N <dbl>, SNCA_N <dbl>, Ubiquitin_N <dbl>, pGSK3B_Tyr216_N <dbl>,
+## #   SHH_N <dbl>, BAD_N <dbl>, BCL2_N <dbl>, pS6_N <dbl>, pCFOS_N <dbl>,
+## #   SYP_N <dbl>, H3AcK18_N <dbl>, EGR1_N <dbl>, H3MeK4_N <dbl>,
+## #   CaNA_N <dbl>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{vec =}\StringTok{ }\NormalTok{dat_pheno}\OperatorTok{$}\NormalTok{Genotype}
+\NormalTok{vec =}\StringTok{ }\KeywordTok{factor}\NormalTok{(vec, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Control"}\NormalTok{, }\StringTok{"Ts65Dn"}\NormalTok{))}
+\NormalTok{vec =}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(vec)}
+
+\NormalTok{tmp =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(dat_exprs_imp, }\ControlFlowTok{function}\NormalTok{(x)\{}
+    \KeywordTok{cor}\NormalTok{(vec, x)}
+\NormalTok{\})}
+
+\CommentTok{#res = as.numeric(tmp)}
+\NormalTok{tmp =}\StringTok{ }\KeywordTok{unlist}\NormalTok{(tmp)}
+\NormalTok{idx =}\StringTok{ }\KeywordTok{which}\NormalTok{(}\KeywordTok{abs}\NormalTok{(tmp) }\OperatorTok{>}\StringTok{ }\FloatTok{0.2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{idx}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      pNR2A_N        APP_N       MTOR_N      pPKCG_N         S6_N 
+##           16           31           34           47           49 
+## AcetylH3K9_N        Tau_N      GluR3_N        SYP_N    H3AcK18_N 
+##           51           57           59           73           74
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df =}\StringTok{ }\NormalTok{dat_exprs_imp[, idx]}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\NormalTok{dat_pheno}\OperatorTok{$}\NormalTok{Genotype}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Control"}\NormalTok{, }\StringTok{"Ts65Dn"}\NormalTok{))}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype) }\OperatorTok{-}\StringTok{ }\DecValTok{1}
+
+\NormalTok{fit_logit =}\StringTok{ }\KeywordTok{glm}\NormalTok{(Genotype }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ df, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\KeywordTok{summary}\NormalTok{(fit_logit)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = Genotype ~ ., family = binomial(link = "logit"), 
+##     data = df)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -4.2589  -0.4139  -0.1210   0.3726   2.5030  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(>|z|)    
+## (Intercept)   -3.2798     1.4877  -2.205 0.027476 *  
+## pNR2A_N       -1.8765     0.6807  -2.757 0.005841 ** 
+## APP_N         46.4189     2.9762  15.597  < 2e-16 ***
+## MTOR_N       -23.3881     2.4276  -9.634  < 2e-16 ***
+## pPKCG_N        0.4825     0.2034   2.372 0.017699 *  
+## S6_N          -4.3893     1.0318  -4.254 2.10e-05 ***
+## AcetylH3K9_N  -2.5872     1.0870  -2.380 0.017306 *  
+## Tau_N         15.0796     2.8228   5.342 9.18e-08 ***
+## GluR3_N      -11.4982     3.3205  -3.463 0.000535 ***
+## SYP_N        -11.0457     2.0362  -5.425 5.81e-08 ***
+## H3AcK18_N     13.3526     2.8216   4.732 2.22e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1493.86  on 1079  degrees of freedom
+## Residual deviance:  661.92  on 1069  degrees of freedom
+## AIC: 683.92
+## 
+## Number of Fisher Scoring iterations: 6
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{concordance}\NormalTok{(fit_logit)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $Concordance
+## [1] 0.9456622
+## 
+## $Discordance
+## [1] 0.05433781
+## 
+## $Tied
+## [1] 0
+## 
+## $Pairs
+## [1] 290700
+## 
+## $`Somers D`
+## [1] 0.8913244
+## 
+## $gamma
+## [1] 0.8913244
+## 
+## $`tau-a`
+## [1] 0.4446985
+## 
+## $c
+## Area under the curve: 0.9457
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{3}
+\item
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \setcounter{enumii}{1}
+  \tightlist
+  \item
+    regress teh genotype one the first few meaning ful
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df =}\StringTok{ }\NormalTok{dat_pheno}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc1 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{1}\NormalTok{]}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc2 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{2}\NormalTok{]}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc3 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{3}\NormalTok{]}
+\NormalTok{df}\OperatorTok{$}\NormalTok{pc4 =}\StringTok{ }\NormalTok{res_pca}\OperatorTok{$}\NormalTok{scores[, }\DecValTok{4}\NormalTok{]}
+
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{factor}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Control"}\NormalTok{, }\StringTok{"Ts65Dn"}\NormalTok{))}
+\NormalTok{df}\OperatorTok{$}\NormalTok{Genotype =}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(df}\OperatorTok{$}\NormalTok{Genotype) }\OperatorTok{-}\StringTok{ }\DecValTok{1}
+
+\NormalTok{fit_logit =}\StringTok{ }\KeywordTok{glm}\NormalTok{(Genotype }\OperatorTok{~}\StringTok{ }\NormalTok{pc1 }\OperatorTok{+}\StringTok{ }\NormalTok{pc2 }\OperatorTok{+}\StringTok{ }\NormalTok{pc3 }\OperatorTok{+}\StringTok{ }\NormalTok{pc4, }\DataTypeTok{data =}\NormalTok{ df, }\DataTypeTok{family =} \KeywordTok{binomial}\NormalTok{(}\DataTypeTok{link =} \StringTok{"logit"}\NormalTok{))}
+\KeywordTok{summary}\NormalTok{(fit_logit)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## glm(formula = Genotype ~ pc1 + pc2 + pc3 + pc4, family = binomial(link = "logit"), 
+##     data = df)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.5852  -1.0760  -0.7412   1.1585   1.7526  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(>|z|)    
+## (Intercept) -0.117539   0.063238  -1.859 0.063074 .  
+## pc1         -0.081042   0.042310  -1.915 0.055438 .  
+## pc2         -0.188398   0.051757  -3.640 0.000273 ***
+## pc3          0.701437   0.092120   7.614 2.65e-14 ***
+## pc4          0.001427   0.109944   0.013 0.989641    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1493.9  on 1079  degrees of freedom
+## Residual deviance: 1416.2  on 1075  degrees of freedom
+## AIC: 1426.2
+## 
+## Number of Fisher Scoring iterations: 4
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{concordance}\NormalTok{(fit_logit)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $Concordance
+## [1] 0.6379119
+## 
+## $Discordance
+## [1] 0.3620881
+## 
+## $Tied
+## [1] 0
+## 
+## $Pairs
+## [1] 290700
+## 
+## $`Somers D`
+## [1] 0.2758239
+## 
+## $gamma
+## [1] 0.2758239
+## 
+## $`tau-a`
+## [1] 0.1376137
+## 
+## $c
+## Area under the curve: 0.6379
+\end{verbatim}
+
+\section{Clustering}\label{clustering}
+
+K-Mediods
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(cluster)}
+\KeywordTok{library}\NormalTok{(pheatmap)}
+\KeywordTok{library}\NormalTok{(pROC)}
+\KeywordTok{library}\NormalTok{(RColorBrewer)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{clust_mediods =}\StringTok{ }\KeywordTok{pam}\NormalTok{(dat_exprs_imp, }\DataTypeTok{k =} \DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{clust_sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(clust_mediods)}
+\KeywordTok{mean}\NormalTok{(clust_sil[, }\DecValTok{3}\NormalTok{])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.2438884
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sil_score =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{)}
+
+\ControlFlowTok{for}\NormalTok{ (k }\ControlFlowTok{in} \DecValTok{2}\OperatorTok{:}\DecValTok{5}\NormalTok{)\{}
+\NormalTok{    clust =}\StringTok{ }\KeywordTok{pam}\NormalTok{(dat_exprs_imp, }\DataTypeTok{k =}\NormalTok{ k)}
+\NormalTok{    sil   =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(clust)}
+\NormalTok{    sil_score[k] =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])    }
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\KeywordTok{qplot}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(sil_score), sil_score, }\DataTypeTok{geom =} \KeywordTok{c}\NormalTok{(}\StringTok{"line"}\NormalTok{, }\StringTok{"point"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{scale_x_continuous}\NormalTok{(}\DataTypeTok{breaks =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(sil_score))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-24-1.pdf}
+
+There are around 2 to 5 clusters. The best chose of k is 3.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{clust_mediods =}\StringTok{ }\KeywordTok{pam}\NormalTok{(dat_exprs_imp, }\DataTypeTok{k =} \DecValTok{3}\NormalTok{)}
+
+\NormalTok{df  =}\StringTok{ }\NormalTok{dat_pheno }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{MouseID)}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(df, }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{    df =}\StringTok{ }\KeywordTok{table}\NormalTok{(clust_mediods}\OperatorTok{$}\NormalTok{clustering, x) }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.matrix}
+    \KeywordTok{rownames}\NormalTok{(df) =}\StringTok{ }\KeywordTok{paste}\NormalTok{(}\StringTok{"cluster"}\NormalTok{, }\DecValTok{1}\OperatorTok{:}\DecValTok{3}\NormalTok{)}
+    \KeywordTok{return}\NormalTok{(df)}
+\NormalTok{\}) }\CommentTok{# end lapply}
+
+\ControlFlowTok{for}\NormalTok{ (mat }\ControlFlowTok{in}\NormalTok{ res)\{}
+    \KeywordTok{pheatmap}\NormalTok{(}
+\NormalTok{        mat,}
+        \CommentTok{#color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100))}
+        \DataTypeTok{color =} \KeywordTok{colorRampPalette}\NormalTok{(}\KeywordTok{brewer.pal}\NormalTok{(}\DataTypeTok{n =} \DecValTok{7}\NormalTok{, }\DataTypeTok{name =} \StringTok{"Reds"}\NormalTok{))(}\DecValTok{100}\NormalTok{),}
+        \DataTypeTok{treeheight_row =} \DecValTok{0}\NormalTok{,}
+        \DataTypeTok{treeheight_col =} \DecValTok{0}\NormalTok{,}
+\NormalTok{    ) }\CommentTok{# end pheatmap}
+\NormalTok{\} }\CommentTok{# end for loop}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-25-2.pdf}
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-25-3.pdf}
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-25-4.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{clust_mediods =}\StringTok{ }\KeywordTok{pam}\NormalTok{(dat_exprs_imp, }\DataTypeTok{k =} \DecValTok{3}\NormalTok{)}
+
+\NormalTok{df  =}\StringTok{ }\NormalTok{dat_pheno }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{MouseID)}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(df, }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{    df =}\StringTok{ }\KeywordTok{table}\NormalTok{(clust_mediods}\OperatorTok{$}\NormalTok{clustering, x) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{        }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }
+\StringTok{        }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{rename_}\NormalTok{(}
+            \DataTypeTok{.dots=}\KeywordTok{setNames}\NormalTok{(}
+                \KeywordTok{names}\NormalTok{(.), }
+                \KeywordTok{c}\NormalTok{(}\StringTok{"cluster"}\NormalTok{, }\StringTok{"variable"}\NormalTok{, }\StringTok{"freq"}\NormalTok{)))}
+\NormalTok{\}) }\CommentTok{# end lapply}
+
+\NormalTok{gp  =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(res, }\ControlFlowTok{function}\NormalTok{(df)\{}
+        \KeywordTok{ggplot}\NormalTok{(df, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ cluster, }\DataTypeTok{y =}\NormalTok{ variable, }\DataTypeTok{fill =}\NormalTok{ freq)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_tile}\NormalTok{()}
+\NormalTok{\}) }\CommentTok{# end lapply}
+
+
+\KeywordTok{grid.arrange}\NormalTok{(gp[[}\DecValTok{1}\NormalTok{]], gp[[}\DecValTok{2}\NormalTok{]], gp[[}\DecValTok{3}\NormalTok{]], gp[[}\DecValTok{4}\NormalTok{]], }\DataTypeTok{nrow =} \DecValTok{2}\NormalTok{, }\DataTypeTok{ncol =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-26-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{colnames}\NormalTok{(dat_exprs_imp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "DYRK1A_N"        "ITSN1_N"         "BDNF_N"         
+##  [4] "NR1_N"           "NR2A_N"          "pAKT_N"         
+##  [7] "pBRAF_N"         "pCAMKII_N"       "pCREB_N"        
+## [10] "pELK_N"          "pERK_N"          "pJNK_N"         
+## [13] "PKCA_N"          "pMEK_N"          "pNR1_N"         
+## [16] "pNR2A_N"         "pNR2B_N"         "pPKCAB_N"       
+## [19] "pRSK_N"          "AKT_N"           "BRAF_N"         
+## [22] "CAMKII_N"        "CREB_N"          "ELK_N"          
+## [25] "ERK_N"           "GSK3B_N"         "JNK_N"          
+## [28] "MEK_N"           "TRKA_N"          "RSK_N"          
+## [31] "APP_N"           "Bcatenin_N"      "SOD1_N"         
+## [34] "MTOR_N"          "P38_N"           "pMTOR_N"        
+## [37] "DSCR1_N"         "AMPKA_N"         "NR2B_N"         
+## [40] "pNUMB_N"         "RAPTOR_N"        "TIAM1_N"        
+## [43] "pP70S6_N"        "NUMB_N"          "P70S6_N"        
+## [46] "pGSK3B_N"        "pPKCG_N"         "CDK5_N"         
+## [49] "S6_N"            "ADARB1_N"        "AcetylH3K9_N"   
+## [52] "RRP1_N"          "BAX_N"           "ARC_N"          
+## [55] "ERBB4_N"         "nNOS_N"          "Tau_N"          
+## [58] "GFAP_N"          "GluR3_N"         "GluR4_N"        
+## [61] "IL1B_N"          "P3525_N"         "pCASP9_N"       
+## [64] "PSD95_N"         "SNCA_N"          "Ubiquitin_N"    
+## [67] "pGSK3B_Tyr216_N" "SHH_N"           "BAD_N"          
+## [70] "BCL2_N"          "pS6_N"           "pCFOS_N"        
+## [73] "SYP_N"           "H3AcK18_N"       "EGR1_N"         
+## [76] "H3MeK4_N"        "CaNA_N"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sil_score =}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{)}
+
+\ControlFlowTok{for}\NormalTok{ (k }\ControlFlowTok{in} \DecValTok{2}\OperatorTok{:}\DecValTok{5}\NormalTok{)\{}
+\NormalTok{    clust =}\StringTok{ }\KeywordTok{pam}\NormalTok{(}\KeywordTok{t}\NormalTok{(dat_exprs_imp), }\DataTypeTok{k =}\NormalTok{ k)}
+\NormalTok{    sil   =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(clust)}
+\NormalTok{    sil_score[k] =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])    }
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\KeywordTok{qplot}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(sil_score), sil_score, }\DataTypeTok{geom =} \KeywordTok{c}\NormalTok{(}\StringTok{"line"}\NormalTok{, }\StringTok{"point"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{scale_x_continuous}\NormalTok{(}\DataTypeTok{breaks =} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(sil_score))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-28-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{clust_mediods_protein =}\StringTok{ }\KeywordTok{pam}\NormalTok{(}\KeywordTok{t}\NormalTok{(dat_exprs_imp), }\DataTypeTok{k =} \DecValTok{5}\NormalTok{)}
+\NormalTok{idx =}\StringTok{ }\KeywordTok{order}\NormalTok{(clust_mediods_protein}\OperatorTok{$}\NormalTok{cluster)}
+\KeywordTok{print}\NormalTok{(idx)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1]  1  2 11 15 16 19 20 21 22 29 31 33 34 35 36 37 38 39 40 42 43 49 61
+## [24] 73  3  6  7  9 12 13 14 23 27 28 30 41 44 46 48 51 52 53 54 55 56 57
+## [47] 58 59 60 62 65 68 69 70 71 72 74 75 76  4 25 32 64  5  8 10 17 18 24
+## [70] 26 45 47 50 63 66 67 77
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{colors =}\StringTok{ }\KeywordTok{brewer.pal}\NormalTok{(}\DataTypeTok{name =} \StringTok{"RdYlBu"}\NormalTok{, }\DataTypeTok{n =} \DecValTok{8}\NormalTok{)}
+\NormalTok{colors =}\StringTok{ }\KeywordTok{rev}\NormalTok{(colors)}
+\NormalTok{colors =}\StringTok{ }\KeywordTok{colorRampPalette}\NormalTok{(colors)(}\DecValTok{100}\NormalTok{)}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{cor}\NormalTok{(dat_exprs_imp[,idx])}
+\NormalTok{corrplot}\OperatorTok{::}\KeywordTok{corrplot}\NormalTok{(res, }\DataTypeTok{col =}\NormalTok{ colors, }\DataTypeTok{tl.cex=}\FloatTok{0.2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-30-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#corrplot.mixed(M, lower.col = colors, upper.col = colors)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mat =}\StringTok{ }\KeywordTok{dist}\NormalTok{(dat_exprs_imp, )}
+\KeywordTok{hclust}\NormalTok{(mat)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## hclust(d = mat)
+## 
+## Cluster method   : complete 
+## Distance         : euclidean 
+## Number of objects: 1080
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mat =}\StringTok{ }\KeywordTok{cor}\NormalTok{(}\KeywordTok{t}\NormalTok{(dat_exprs_imp))}
+\NormalTok{mat =}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{mat}
+\NormalTok{mat =}\StringTok{ }\KeywordTok{as.dist}\NormalTok{(mat)}
+
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{table}\NormalTok{(}\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{))}
+    \KeywordTok{return}\NormalTok{(tmp)}
+\NormalTok{\})}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{do.call}\NormalTok{(rbind, res)}
+\KeywordTok{rownames}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{res}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##             1   2   3 4
+## single   1064  14   1 1
+## complete   73 629 376 2
+## average  1058   6  15 1
+\end{verbatim}
+
+The cluster size are similar in the complete method, while
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mat =}\StringTok{ }\KeywordTok{cor}\NormalTok{(}\KeywordTok{t}\NormalTok{(dat_exprs_scale))}
+\NormalTok{mat =}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{mat}
+\NormalTok{mat =}\StringTok{ }\KeywordTok{as.dist}\NormalTok{(mat)}
+
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{table}\NormalTok{(}\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{))}
+    \KeywordTok{return}\NormalTok{(tmp)}
+\NormalTok{\})}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{do.call}\NormalTok{(rbind, res)}
+\KeywordTok{rownames}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{res}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##             1   2   3   4
+## single   1075   1   3   1
+## complete  257 413 237 173
+## average   437 148 379 116
+\end{verbatim}
+
+the method complete and average now create clusters with about similar
+sizes compare to the one without scaled
+
+Using the distance matrix from standandized data, the single and average
+method
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mat =}\StringTok{ }\KeywordTok{dist}\NormalTok{(dat_exprs_scale)}
+
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{table}\NormalTok{(}\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{))}
+    \KeywordTok{return}\NormalTok{(tmp)}
+\NormalTok{\})}
+
+\NormalTok{res =}\StringTok{ }\KeywordTok{do.call}\NormalTok{(rbind, res)}
+\KeywordTok{rownames}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{res}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##             1   2   3  4
+## single   1077   1   1  1
+## complete  212 698 147 23
+## average  1061   1  15  3
+\end{verbatim}
+
+sampling 20\% of the data (observations) and compare cluster membership
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mat =}\StringTok{ }\KeywordTok{dist}\NormalTok{(dat_exprs_scale)}
+
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+\NormalTok{res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{    tmp =}\StringTok{ }\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{)}
+    
+\NormalTok{    sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(tmp, mat)}
+\NormalTok{    sil =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])}
+    \KeywordTok{return}\NormalTok{(sil)}
+\NormalTok{\})}
+\KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{res=}\StringTok{ }\KeywordTok{unlist}\NormalTok{(res)}
+\NormalTok{res}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     single   complete    average 
+## 0.29612325 0.07993248 0.27762730
+\end{verbatim}
+
+sampling evaluation
+\url{https://www.stat.berkeley.edu/~spector/s133/Clus.html}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{ITER_HC =}\StringTok{ }\DecValTok{100}
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+
+\NormalTok{res_hc_sampling =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (dummy_num }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC)\{}
+\NormalTok{    df =}\StringTok{ }\NormalTok{dat_exprs_scale }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_frac}\NormalTok{(}\FloatTok{0.2}\NormalTok{)}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{dist}\NormalTok{(df)}
+    
+    
+\NormalTok{    res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{)}
+    
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(tmp, mat)}
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])}
+        \KeywordTok{return}\NormalTok{(sil)}
+\NormalTok{    \}) }\CommentTok{# end lapply}
+    
+    \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{    res=}\StringTok{ }\KeywordTok{unlist}\NormalTok{(res)}
+    
+\NormalTok{    res_hc_sampling =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_hc_sampling, res)}
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\CommentTok{#res_hc_sampling}
+\NormalTok{dat =}\StringTok{ }\NormalTok{res_hc_sampling }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{iteration =} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{gather}\NormalTok{(method, score, }\OperatorTok{-}\NormalTok{iteration)}
+
+\NormalTok{gp =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(dat, }\KeywordTok{aes}\NormalTok{(}
+    \DataTypeTok{x =}\NormalTok{ iteration, }
+    \DataTypeTok{y =}\NormalTok{ score, }\DataTypeTok{group =}\NormalTok{ method, }
+    \DataTypeTok{color =}\NormalTok{ method)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{geom_line}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{y =} \StringTok{"silhouette score"}\NormalTok{, }\DataTypeTok{title =} \StringTok{"Scaled data ; Sampling 20% ; distance matrix"}\NormalTok{)}
+
+\NormalTok{gp_scale_dist =}\StringTok{ }\NormalTok{gp}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{ITER_HC =}\StringTok{ }\DecValTok{100}
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+
+\NormalTok{res_hc_sampling =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (dummy_num }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC)\{}
+    
+\NormalTok{    df =}\StringTok{ }\NormalTok{dat_exprs_imp }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_frac}\NormalTok{(}\FloatTok{0.2}\NormalTok{)}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{dist}\NormalTok{(df)}
+    
+    
+\NormalTok{    res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{)}
+    
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(tmp, mat)}
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])}
+        \KeywordTok{return}\NormalTok{(sil)}
+\NormalTok{    \}) }\CommentTok{# end lapply}
+    
+    \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{    res=}\StringTok{ }\KeywordTok{unlist}\NormalTok{(res)}
+    
+\NormalTok{    res_hc_sampling =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_hc_sampling, res)}
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\CommentTok{#res_hc_sampling}
+\NormalTok{dat =}\StringTok{ }\NormalTok{res_hc_sampling }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{iteration =} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{gather}\NormalTok{(method, score, }\OperatorTok{-}\NormalTok{iteration)}
+
+\NormalTok{gp =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(dat, }\KeywordTok{aes}\NormalTok{(}
+    \DataTypeTok{x =}\NormalTok{ iteration, }
+    \DataTypeTok{y =}\NormalTok{ score, }\DataTypeTok{group =}\NormalTok{ method, }
+    \DataTypeTok{color =}\NormalTok{ method)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{geom_line}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{y =} \StringTok{"silhouette score"}\NormalTok{, }\DataTypeTok{title =} \StringTok{"Imputed data ; Sampling 20% ; distance matrix"}\NormalTok{)}
+
+\NormalTok{gp_imp_dist =}\StringTok{ }\NormalTok{gp}
+\end{Highlighting}
+\end{Shaded}
+
+do it again with correlation matrix
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{ITER_HC =}\StringTok{ }\DecValTok{100}
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+
+\NormalTok{res_hc_sampling =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (dummy_num }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC)\{}
+\NormalTok{    df =}\StringTok{ }\NormalTok{dat_exprs_scale }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_frac}\NormalTok{(}\FloatTok{0.2}\NormalTok{)}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{cor}\NormalTok{(}\KeywordTok{t}\NormalTok{(df))}
+\NormalTok{    mat =}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{mat}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{as.dist}\NormalTok{(mat)}
+    
+\NormalTok{    res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{)}
+    
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(tmp, mat)}
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])}
+        \KeywordTok{return}\NormalTok{(sil)}
+\NormalTok{    \}) }\CommentTok{# end lapply}
+    
+    \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{    res=}\StringTok{ }\KeywordTok{unlist}\NormalTok{(res)}
+    
+\NormalTok{    res_hc_sampling =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_hc_sampling, res)}
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\CommentTok{#res_hc_sampling}
+\NormalTok{dat =}\StringTok{ }\NormalTok{res_hc_sampling }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{iteration =} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{gather}\NormalTok{(method, score, }\OperatorTok{-}\NormalTok{iteration)}
+
+\NormalTok{gp =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(dat, }\KeywordTok{aes}\NormalTok{(}
+    \DataTypeTok{x =}\NormalTok{ iteration, }
+    \DataTypeTok{y =}\NormalTok{ score, }\DataTypeTok{group =}\NormalTok{ method, }
+    \DataTypeTok{color =}\NormalTok{ method)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{geom_line}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{y =} \StringTok{"silhouette score"}\NormalTok{, }\DataTypeTok{title =} \StringTok{"Scaled Data; Sampling 20% ; Correlation"}\NormalTok{)}
+
+\NormalTok{gp_scale_cor =}\StringTok{ }\NormalTok{gp}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{0}\NormalTok{)}
+
+\NormalTok{ITER_HC =}\StringTok{ }\DecValTok{100}
+\NormalTok{methods =}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"single"}\NormalTok{, }\StringTok{"complete"}\NormalTok{, }\StringTok{"average"}\NormalTok{)}
+
+\NormalTok{res_hc_sampling =}\StringTok{ }\OtherTok{NULL}
+\ControlFlowTok{for}\NormalTok{ (dummy_num }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC)\{}
+\NormalTok{    df =}\StringTok{ }\NormalTok{dat_exprs_imp }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sample_frac}\NormalTok{(}\FloatTok{0.2}\NormalTok{)}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{cor}\NormalTok{(}\KeywordTok{t}\NormalTok{(df))}
+\NormalTok{    mat =}\StringTok{ }\DecValTok{1} \OperatorTok{-}\StringTok{ }\NormalTok{mat}
+\NormalTok{    mat =}\StringTok{ }\KeywordTok{as.dist}\NormalTok{(mat)}
+    
+\NormalTok{    res =}\StringTok{ }\KeywordTok{lapply}\NormalTok{(methods, }\ControlFlowTok{function}\NormalTok{(method)\{}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{hclust}\NormalTok{(mat, }\DataTypeTok{method =}\NormalTok{ method)}
+\NormalTok{        tmp =}\StringTok{ }\KeywordTok{cutree}\NormalTok{(tmp, }\DataTypeTok{k =} \DecValTok{4}\NormalTok{)}
+    
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{silhouette}\NormalTok{(tmp, mat)}
+\NormalTok{        sil =}\StringTok{ }\KeywordTok{mean}\NormalTok{(sil[, }\DecValTok{3}\NormalTok{])}
+        \KeywordTok{return}\NormalTok{(sil)}
+\NormalTok{    \}) }\CommentTok{# end lapply}
+    
+    \KeywordTok{names}\NormalTok{(res) =}\StringTok{ }\NormalTok{methods}
+\NormalTok{    res=}\StringTok{ }\KeywordTok{unlist}\NormalTok{(res)}
+    
+\NormalTok{    res_hc_sampling =}\StringTok{ }\KeywordTok{rbind}\NormalTok{(res_hc_sampling, res)}
+\NormalTok{\} }\CommentTok{# end for loop}
+
+\CommentTok{#res_hc_sampling}
+\NormalTok{dat =}\StringTok{ }\NormalTok{res_hc_sampling }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\NormalTok{as.data.frame }\OperatorTok{%>%}\StringTok{ }
+\StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{iteration =} \DecValTok{1}\OperatorTok{:}\NormalTok{ITER_HC) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{gather}\NormalTok{(method, score, }\OperatorTok{-}\NormalTok{iteration)}
+
+\NormalTok{gp =}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(dat, }\KeywordTok{aes}\NormalTok{(}
+    \DataTypeTok{x =}\NormalTok{ iteration, }
+    \DataTypeTok{y =}\NormalTok{ score, }\DataTypeTok{group =}\NormalTok{ method, }
+    \DataTypeTok{color =}\NormalTok{ method)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{geom_line}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{y =} \StringTok{"silhouette score"}\NormalTok{, }\DataTypeTok{title =} \StringTok{"Imputed Data; Sampling 20% ; Correlation"}\NormalTok{)}
+
+
+\NormalTok{gp_imp_cor =}\StringTok{ }\NormalTok{gp}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{my_geom =}\StringTok{ }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{title =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{))}
+\KeywordTok{grid.arrange}\NormalTok{(gp_imp_dist }\OperatorTok{+}\StringTok{ }\NormalTok{my_geom, }
+\NormalTok{             gp_imp_cor }\OperatorTok{+}\StringTok{ }\NormalTok{my_geom, }
+\NormalTok{             gp_scale_dist }\OperatorTok{+}\StringTok{ }\NormalTok{my_geom, }
+\NormalTok{             gp_scale_cor }\OperatorTok{+}\StringTok{ }\NormalTok{my_geom)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PS3_Ko_KueiYueh_v2_files/figure-latex/unnamed-chunk-40-1.pdf}
+
+
+\end{document}

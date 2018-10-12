@@ -1,0 +1,468 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(foreach)
+library(clue)
+
+library(RColorBrewer)
+library(pheatmap)
+library(grid)
+library(gridExtra)
+```
+
+global constant
+```{r}
+K          <- 3
+N          <- 100
+ICC        <- 0.3
+SIG2_ALPHA <- 10
+P          <- 50
+ITER_KM    <- 500
+```
+
+
+
+```{r}
+simulate_icc <- function(icc, grp_size = 10, n_grp = 5, mu_tot = 0, sig2_a = 1){
+    # function to simuate the data from specific ICC
+    # =================================
+    
+    ### calculate sig2_e from the ICC and sig2_a
+    sig2_e <- sig2_a * (1 / icc - 1)
+    
+    ### simulate alpha by sig2_a
+    alpha  <- rnorm(n_grp, mean = 0, sd = sig2_a^0.5)
+    
+    ### simulate error for each group by sig2_e
+    df <- sapply(mu_tot + alpha, function(x){
+        eps <- rnorm(grp_size, mean = 0, sd = sig2_e^0.5)
+        return(x + eps)
+    })
+
+    ### set column names
+    df <- data.frame(df)
+    colnames(df) <- paste("Grp", 1:n_grp)
+
+    ### gather and return
+    df <- df %>% gather(Group, Value)
+    return(df)
+} # end func
+```
+
+```{r}
+### set binary merge function
+my_combine <- function(x, y){
+    y = y %>% select(-Group)
+    return(bind_cols(x, y))
+} # end func
+
+
+simulate_data <- function(icc, k = K, n = N, sig2_a = SIG2_ALPHA, p = P, var_name = "V", func_combine = my_combine){
+    ### simulation
+    dat = replicate(
+        p, 
+        simulate_icc(
+            icc, 
+            n_grp = k, 
+            grp_size = floor(n / k), 
+            sig2_a = sig2_a),
+        simplify = FALSE)
+    
+    ### reduced simulated data into one dataframe
+    dat = foreach(
+         idx = 1:length(dat), 
+         .combine = func_combine) %do% {
+             df = dat[[idx]]
+             df = df %>% dplyr::rename_(
+                 .dots=setNames(
+                names(.), 
+                c("Group", paste0(var_name, idx))))
+    } # end do in foreach
+    return(dat)
+} # end func
+
+plot_dat_sim <- function(dat, variable){
+    df <- dat %>% 
+        select(Group, variable) %>% 
+        gather(variable, value, -Group)
+    
+    gp <- ggplot(df, aes(x = Group, y = value, color = Group)) + 
+        geom_jitter(width = 0.2) +
+        ggtitle("Simulating random effects with different ICC") +
+        theme(
+            axis.title.y = element_text(size = 15),
+            axis.title.x = element_text(size = 15),
+            axis.text.x  = element_text(size = 12, angle = 90, vjust = 0.5),
+            strip.text.x = element_text(size = 20, color = "grey30")) +
+        facet_wrap(~variable)
+    
+    return(gp)
+}
+
+```
+
+```{r, fig.height=5}
+set.seed(0)
+
+dat_sim = simulate_data(0.9)
+gp1 = plot_dat_sim(dat_sim, c("V1", "V10", "V50"))
+
+dat_sim = simulate_data(0.5)
+gp2 = plot_dat_sim(dat_sim, c("V1", "V10", "V50"))
+
+grid.arrange(gp1, gp2)
+```
+
+
+
+```{r}
+simulate_kmean <- function(dat, iteration){
+    unmatch = c()
+
+    for (idx in 1:iteration){
+        ###
+        mat = dat %>% select(-Group) %>% as.matrix
+    
+        ###
+        clust = kmeans(mat, centers = 3)
+    
+        ### confusion matrix
+        mat_conf = table(clust$cluster, dat_sim$Group)
+    
+        ### cluster alignment to calculate ...
+        idx = solve_LSAP(mat_conf, maximum = TRUE)
+        num = sum(mat_conf[cbind(seq_along(idx), idx)])
+        unmatch = c(unmatch, nrow(mat) - num) 
+    } # end for loop
+    return(unmatch)
+} # end func
+```
+
+```{r}
+set.seed(0)
+dat_sim = simulate_data(0.3)
+
+set.seed(0)
+unmatch = simulate_kmean(dat_sim, 100)
+
+data.frame(x = 1:length(unmatch), y = unmatch) %>%
+    ggplot(., aes(x = x, y = y)) +
+    geom_line() +
+    geom_point() +
+    labs(x = "iteration", y = "number of points mismatch")
+```
+
+```{r}
+x = NULL
+if(is.null(x)){print("hi")}else{print("?")}
+```
+
+```{r}
+TRUE & TRUE
+```
+
+
+```{r}
+summary_unmatch <- function(unmatch, icc = NULL, q = NULL){
+    unmatch_events    = sum(unmatch > 0)
+    unmatch_points_mu = mean(unmatch)
+    unmatch_points_sd = sd(unmatch)
+    
+    is_exist_icc = !is.null(icc)
+    is_exist_q   = !is.null(q)
+    
+    if (is_exist_icc & is_exist_q){
+        res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd, icc, q)
+        names(res) = c("events", "points_mu", "points_sd", "icc", "q")
+        
+    } else if (is_exist_icc) {
+        res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd, icc)
+        names(res) = c("events", "points_mu", "points_sd", "icc")
+        
+    } else if (is_exist_q) {
+        res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd, q)
+        names(res) = c("events", "points_mu", "points_sd", "q")
+        
+    } else {
+        res = c(unmatch_events, unmatch_points_mu, unmatch_points_sd)
+        names(res) = c("events", "points_mu", "points_sd")
+    }
+    
+    return(res)
+}
+
+set.seed(0)
+dat_sim = simulate_data(0.3)
+
+set.seed(0)
+unmatch = simulate_kmean(dat_sim, 100)
+print(summary_unmatch(unmatch))
+print(summary_unmatch(unmatch, icc = 0.1))
+print(summary_unmatch(unmatch, icc = 0.1, q = 0.5))
+```
+
+```{r}
+plot_unmatch <- function(res_unmatch, iter_km = ITER_KM){
+    #
+    
+    ###
+    df = as.data.frame(res_unmatch)
+    
+    ###
+    gp1 = ggplot(df, aes(x = icc, y = events)) +
+        geom_line() + 
+        geom_point() +
+        labs(x = "ICC", 
+             y = "Number of time kmeans \n failed to cluster correctly",
+             title = paste("Number of kmeans for each ICC", iter_km))
+    
+    ###
+    gp2 = ggplot(df, aes(x = icc, y = points_mu)) +
+        geom_ribbon(aes(
+            ymin = points_mu - 1, 
+            ymax = points_mu + 1), 
+            fill = "grey70") +
+        geom_line() + geom_point() +
+        labs(x = "ICC", 
+             y = "Expected points uncover \n into wrong groups")
+    return(list(gp1, gp2))
+    #return(grid.arrange(gp1, gp2, nrow = 2))
+}
+
+#######################################
+iccs = seq(0.1, 1.0, length.out = 10)
+ITER_KM = 500
+
+set.seed(0)
+res_km_icc = NULL
+for (icc in iccs){
+    cat("icc:", icc, "\n")
+    dat_sim = simulate_data(icc)
+    unmatch = simulate_kmean(dat_sim, ITER_KM)
+    unmatch_sum = summary_unmatch(unmatch, icc = icc)
+    
+    res_km_icc = rbind(res_km_icc, unmatch_sum)
+}
+
+gp = plot_unmatch(res_km_icc)
+grid.arrange(gp[[1]], gp[[2]], nrow = 2)
+```
+
+```{r}
+simulate_data_noise <- function(icc, q, k = K, n = N, sig2_a = SIG2_ALPHA, p = P, func_sim_data = simulate_data){
+    
+    ### assert if q is larger than p
+    if (q > p){
+        cat("ERROR: argument q > p")
+    }
+    
+    
+    if (q == 0){
+        dat = simulate_data(0.0001)
+        
+    } else if (q == 50) {
+        dat = simulate_data(icc)
+        
+    } else {
+        ###
+        n1 = q
+        n2 = p-q
+    
+        dat1 = func_sim_data(icc,    k, n, sig2_a, n1, var_name = "V")
+        dat2 = func_sim_data(0.0001, k, n, sig2_a, n2, var_name = "N")
+        
+        ###
+        tmp = dat2 %>% select(-Group)
+        dat = bind_cols(dat1, tmp)
+    
+    } # end if else
+    
+    return(dat)
+} # end func
+```
+
+```{r}
+set.seed(0)
+dat_sim = simulate_data_noise(0.1, 10)
+
+#gp1 = plot_dat_sim(dat_sim, c("V1", "V10"))
+#gp2 = plot_dat_sim(dat_sim, c("N1", "N10"))
+#grid.arrange(gp1, gp2)
+gp = plot_dat_sim(dat_sim, c("V1", "V10", "N1", "N2"))
+print(gp)
+```
+
+```{r}
+plot_unmatch_q <- function(res_unmatch_q, iter_km = ITER_KM){
+    #
+    
+    ###
+    df = as.data.frame(res_unmatch_q)
+    
+    gp1 = ggplot(df, aes(x = as.character(q), 
+                        y = as.character(icc), 
+                        fill = events)) + 
+        geom_tile() + 
+        scale_fill_distiller(
+            palette = "Reds", 
+            direction = 1) +
+        labs(x = "q", y = "ICC",
+             title = "Number of time kmeans \n failed to cluster correctly")
+    
+    gp2 = ggplot(df, aes(x = as.character(q), 
+                        y = as.character(icc), 
+                        fill = points_mu)) + 
+        geom_tile() + 
+        scale_fill_distiller(
+            palette = "Reds", 
+            direction = 1) +
+        labs(x = "q", y = "ICC",
+             title = "Expected points uncover \n into wrong groups")
+
+    return(list(gp1, gp2))
+    #return(grid.arrange(gp1, gp2, nrow = 2))
+}
+
+
+
+iccs = seq(0.1, 1.0, length.out = 10)
+qs   = c(0, 1, 25, 49, 50)
+ITER_KM = 500
+
+set.seed(0)
+res_km_icc_q = NULL
+for (icc in iccs){
+    cat("\nicc:", icc)
+    
+    for (q in qs){
+        cat("#")
+        
+        dat_sim = simulate_data_noise(icc, q)
+        
+        unmatch = simulate_kmean(dat_sim, ITER_KM)
+        unmatch_sum = summary_unmatch(unmatch, icc = icc, q = q)
+        
+        res_km_icc_q = rbind(res_km_icc_q, unmatch_sum)
+    } # end for loop
+} # end for loop
+
+#gp = plot_unmatch(res_km_icc_q)
+#grid.arrange(gp[[1]], gp[[2]], nrow = 2)
+#head(res_km_icc_q)
+gp = plot_unmatch_q(res_km_icc_q)
+grid.arrange(gp[[1]], gp[[2]], nrow = 2)
+```
+
+
+```{r}
+res_km_icc_q
+```
+
+PCA
+
+there are two meaningful PC
+```{r}
+plot_pca_scree <- function(res_pca){
+    ###
+    x = res_pca$sdev
+    x = x^2
+    x = x / sum(x)
+  
+    ###
+    df = data.frame(
+        PC   = 1:length(x),
+        prop = x, 
+        cump = cumsum(x))
+
+    idx = which(df$cump > 0.9)[1]
+
+    ###   
+    gp1 = ggplot(df, aes(x = PC, y = prop))
+    gp1 = gp1 +
+       geom_point() +
+       geom_linerange(aes(ymax = prop, ymin = 0))
+
+    gp2 = ggplot(df, aes(x = PC, y = cump))    
+    gp2 = gp2 +
+        geom_point() +
+        geom_linerange(aes(ymax = cump, ymin = 0)) +
+        labs(title = paste("90% PC:", idx))
+    
+    return(list(gp1, gp2))
+} # end func
+
+dat_sim = simulate_data(0.9)
+dat     = dat_sim %>% select(-Group)
+res_pca = princomp(dat)
+
+gp = plot_pca_scree(res_pca)
+grid.arrange(gp[[1]], gp[[2]])
+```
+
+```{r}
+plot_pca_score <- function(res_pca, vec_for_color = NULL){
+    
+    x = res_pca$sdev
+    x = x^2
+    x = x / sum(x)
+    
+    if (is.null(vec_for_color)){
+        gp = data.frame(
+            pc1 = res_pca$scores[, 1],
+            pc2 = res_pca$scores[, 2]) %>%
+            ggplot(., aes(x = pc1, y = pc2))
+        
+    } else {
+        gp = data.frame(
+            pc1 = res_pca$scores[, 1],
+            pc2 = res_pca$scores[, 2],
+            x_col = vec_for_color) %>%
+            ggplot(., aes(x = pc1, y = pc2, color = x_col))
+    } # end if-else
+    
+    gp = gp +
+        geom_point() +
+        labs(x = paste("PC1:", round(x[1], 3) * 100, "%"),
+             y = paste("PC2:", round(x[2], 3) * 100, "%"),
+            title = paste("Total variation explained:", 
+                          round(x[1] + x[2], 3) * 100,
+                          "%"))
+
+    return(gp)
+} # end func
+
+set.seed(0)
+
+dat_sim = simulate_data(0.9)
+
+grp     = dat_sim %>% select(Group)
+grp     = grp$Group
+
+dat     = dat_sim %>% select(-Group)
+
+res_pca = princomp(dat)
+plot_pca_score(res_pca, grp)
+```
+
+
+```{r}
+set.seed(0)
+
+dat_sim = simulate_data(0.9, k = 4)
+
+grp     = dat_sim %>% select(Group)
+grp     = grp$Group
+
+dat     = dat_sim %>% select(-Group)
+
+res_pca = princomp(dat)
+plot_pca_score(res_pca, grp)
+```
+
+
+
+
