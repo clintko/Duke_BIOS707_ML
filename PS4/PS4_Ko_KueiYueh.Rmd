@@ -1,0 +1,59 @@
+---
+title: "PS4"
+output: html_notebook
+---
+
+# Set environment
+```{r}
+library(tidyverse)
+```
+
+
+# Part I. Simulation
+
+## Q1. Over-fitting
+**Simulate training data $X_{nxp}$ where $n = 1000$, $p = 100$. Let $X \sim N(0, \sigma^2I)$ Simulate an outcome Y that is not associated with X, i.e. $Y \sim N(0, \sigma^2)$**
+
+
+```{r}
+### Set parameters
+set.seed(0)
+N     = 1000
+P     = 100
+SIGMA = 10
+
+### simulate data
+X = replicate(
+    N, 
+    rnorm(P, mean = 0, sd = SIGMA))
+Y = rnorm(P, mean = 0, sd = SIGMA)
+
+### combine X and Y
+mat = rbind(Y, X)
+rownames(mat) = c("Y", paste0("X", 1:nrow(X)))
+
+### output the results
+cat("",
+    "Dimension of X", dim(X), "\n",
+    "Dimension of Y", length(Y))
+```
+
+
+### Q1. (a) 
+**Calculate the pairwise correlations between Y & each X. How many have a p-value < 0.10? How many would you expect to have a p-value < 0.10?**
+
+
+```{r}
+rho = cor(t(mat))[1,][-1]
+z   = 1/2 * (log(1 + rho) - log(1 - rho))
+```
+
+```{r}
+z < qnorm(0.1) 
+#| z > qnorm(0.95)
+
+```
+
+
+
+# Part II.  Working with Data
