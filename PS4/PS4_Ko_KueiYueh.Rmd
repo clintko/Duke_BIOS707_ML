@@ -3,9 +3,61 @@ title: "PS4"
 output: html_notebook
 ---
 
-# Set environment
+# Set this notebook
+
 ```{r}
-library(tidyverse)
+### set environment
+suppressWarnings(suppressMessages(library("tidyverse")))
+suppressWarnings(suppressMessages(library("gridExtra")))
+suppressWarnings(suppressMessages(library(splines)))
+suppressWarnings(suppressMessages(library(lmtest)))
+```
+
+
+```{r, echo = FALSE}
+### set theme
+theme_Publication <- function(base_size=14, base_family="helvetica") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               #legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+          ))
+      
+}
+
+scale_fill_Publication <- function(...){
+      library(scales)
+      discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+
+}
+
+scale_colour_Publication <- function(...){
+      library(scales)
+      discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+
+}
 ```
 
 
@@ -14,46 +66,1065 @@ library(tidyverse)
 ## Q1. Over-fitting
 **Simulate training data $X_{nxp}$ where $n = 1000$, $p = 100$. Let $X \sim N(0, \sigma^2I)$ Simulate an outcome Y that is not associated with X, i.e. $Y \sim N(0, \sigma^2)$**
 
-
+There are 100 variables (V1 ~ V100) and one label (Y)
 ```{r}
 ### Set parameters
 set.seed(0)
-N     = 1000
-P     = 100
-SIGMA = 10
-
+N_TRAIN = 1000
+P       = 100
+SIGMA   = 10
+ 
 ### simulate data
-X = replicate(
+X_train = replicate(
     N, 
     rnorm(P, mean = 0, sd = SIGMA))
-Y = rnorm(P, mean = 0, sd = SIGMA)
+X_train = t(X_train)
+colnames(X_train) = paste0("X", 1:P)
 
-### combine X and Y
-mat = rbind(Y, X)
-rownames(mat) = c("Y", paste0("X", 1:nrow(X)))
+Y = rnorm(N, mean = 0, sd = SIGMA)
 
 ### output the results
 cat("",
-    "Dimension of X", dim(X), "\n",
+    "Dimension of X", dim(X_train), "\n",
     "Dimension of Y", length(Y))
 ```
-
 
 ### Q1. (a) 
 **Calculate the pairwise correlations between Y & each X. How many have a p-value < 0.10? How many would you expect to have a p-value < 0.10?**
 
+pairwise correlations between Y & each X.
+```{r, echo = FALSE}
+pval = apply(X_train, 2, function(x){cor.test(x, Y)$p.value})
+cat(length(pval))
+```
 
+visualize the distribution of p value from the pairwise test of correlation
+```{r, fig.height = 3, fig.width = 4}
+gp = as.data.frame(pval) %>% 
+    ggplot(., aes(x = pval)) +
+    geom_histogram(binwidth = 0.05) + 
+    labs(title = "Distribution of p value in tests of correlation",
+         x = "p-value")
+print(gp)
+```
+
+**Q: How many have a p-value < 0.1?**  
+p-value is calculated from cumulative distribution and we know the distribution of the value of cumulative distribution of any distribution is a uniform distribution from 0 to 1. Therefore, we would expected about 10% of the p-value is below 0.1.
 ```{r}
-rho = cor(t(mat))[1,][-1]
-z   = 1/2 * (log(1 + rho) - log(1 - rho))
+cat("",
+    "#{p-value < 0.1}  =",  sum(pval < 0.1), "\n",
+    "P({p-value < 0.1})=", mean(pval < 0.1))
+```
+
+### Q1. (b)
+**Select all variables with a p-value < 0.10 and regress Y on those Xs. Calculate the training error. Repeat at different p-value thresholds. Graph the relationship between training error and p-value threshold.**
+
+
+calculate
+```{r, fig.height = 4, fig.width = 8}
+### pvalue
+pval = apply(X_train, 2, function(x){cor.test(x, Y)$p.value})
+
+### linear fit for X selected under different pvalue threshold
+thresholds = seq(from = 0.1, to = 1.0, by = 0.1)
+
+res = sapply(thresholds, function(threshold) {
+    ### choose the variables w/ pvalue below the threshold
+    idx = which(pval < threshold)
+    dat = cbind(Y, X_train[, idx]) %>% as.data.frame
+    
+    ### fit a linear model
+    fit = lm(Y ~ ., data = dat)
+    len = length(idx)
+    rss_train = mean(residuals(fit, type = "response")^2)
+    return(c(threshold, len, rss_train))
+}) # end lapply
+
+### arrange the results
+res = t(res) %>% as.data.frame
+colnames(res) = c("threshold", "num_x", "rss_train")
+
+### plot the results
+gp1 = ggplot(res, aes(x = threshold, y = num_x)) +
+    geom_point() + geom_line() + theme_Publication() +
+    labs(y = "Number of variables Xs", x = "p value threshold")
+
+gp2 = ggplot(res, aes(x = threshold, y = rss_train)) +
+    geom_point() + geom_line() + theme_Publication() +
+    labs(y = "Mean Residual Sum of Squared\n(Training Data)", x = "p value threshold")
+
+grid.arrange(gp1, gp2, nrow = 1)
+```
+
+
+### Q1. (c) 
+**Simulate a test dataset under the same model as above. Calculate your model's test error as a function of p-value threshold**
+
+simulate test dataset
+```{r}
+### Set parameters
+set.seed(123)
+
+### simulate test data
+N_test = 200
+X_test = replicate(
+    N_test, 
+    rnorm(P, mean = 0, sd = SIGMA))
+
+X_test = t(X_test)
+colnames(X_test) = paste0("X", 1:P)
+
+Y_test = rnorm(N_test, mean = 0, sd = SIGMA)
 ```
 
 ```{r}
-z < qnorm(0.1) 
-#| z > qnorm(0.95)
+### linear fit for X selected under different pvalue threshold
+thresholds = seq(from = 0.1, to = 1.0, by = 0.05)
 
+res = sapply(thresholds, function(threshold) {
+    ### choose the variables w/ pvalue below the threshold
+    idx = which(pval < threshold)
+    dat = cbind(Y, X_train[, idx]) %>% as.data.frame
+    
+    ### fit a linear model
+    fit = lm(Y ~ ., data = dat)
+    
+    ### get training rss
+    rss_train = mean(residuals(fit, type = "response")^2)
+    
+    ### get testing rss
+    new = X_test[, idx] %>% as.data.frame
+    Y_pred    = predict(fit, new)
+    rss_test  = mean((Y_test - Y_pred)^2)
+    return(c(threshold, rss_train, rss_test))
+}) # end lapply
+
+### arrange the rsults
+res = t(res) %>% as.data.frame
+colnames(res) = c("threshold", "rss_train", "rss_test")
+
+### plot the results
+gp1 = ggplot(res, aes(x = threshold, y = rss_train)) +
+    geom_point() + geom_line() + theme_Publication() +
+    labs(y = "Residual Sum of Squared (Train)", x = "p value threshold")
+
+gp2 = ggplot(res, aes(x = threshold, y = rss_test)) +
+    geom_point() + geom_line() + theme_Publication() +
+    labs(y = "Residual Sum of Squared (Test)", x = "p value threshold")
+
+grid.arrange(gp1, gp2, nrow = 1)
 ```
 
+
+### Q1. (d) 
+**Estimate test-error using K-fold cross-validation. How does CV-error perform as a function of p-value threshold. What is the "best" threshold to use. Show your CV code** 
+
+**Optional: Play with the complexity of the variables by introducing quadratic terms. The more complex you make the model, the better you should fit the training data.**
+
+helper function for cross validation
+```{r}
+get_model_matrix <- function(X, Y) {
+    dat = cbind(Y, X) %>% as.data.frame
+    return(dat)
+}
+```
+
+perform cross validation
+```{r}
+### pvalue thresholds
+thresholds = seq(from = 0.01, to = 0.5, by = 0.01)
+
+### create k fold
+K       = 5
+sp      = split(c(1:nrow(X_train)), c(1:K))
+CVpreds = matrix(NA, nrow = nrow(X_train), ncol = length(thresholds))
+
+### for each fold
+for(k in 1:K){
+    
+    ### specify train and test of x and y
+    cv_x_train <- X_train[-sp[[k]],]
+    cv_x_test  <- X_train[ sp[[k]],]
+    cv_y_train <- Y[-sp[[k]]]
+    cv_y_test  <- Y[ sp[[k]]]
+    
+    ### get pvalue of correlation
+    pval     = apply(cv_x_train, 2, function(x){cor.test(x, cv_y_train)$p.value})
+    dat_test = get_model_matrix(cv_x_test, cv_y_test)
+    #print(head(dat_test))
+    
+    ### for each threshold
+    for(i in 1:length(thresholds)) {
+        ### feature selection w/ pvalue threshold
+        idx = which(pval < thresholds[i])
+        dat_train = get_model_matrix(cv_x_train[, idx, drop = F], cv_y_train)
+        
+        ### fit the model with specific pvalue threshold
+        fit <- lm(Y ~ ., data = dat_train)
+        
+        
+        CVpreds[sp[[k]], i] <- predict(fit, dat_test, type = "response")
+    } # end inner loop
+} # end outer loop
+
+
+### get loss of cross validation
+cvloss = apply(CVpreds, 2, function(y_pred){mean((y_pred - Y)^2)})
+
+### visualization
+gp = data.frame(
+    x = thresholds,
+    y = cvloss) %>%
+    ggplot(., aes(x = x, y = y)) +
+    geom_line() + geom_point() + theme_Publication() +
+    geom_vline(xintercept = thresholds[which.min(cvloss)], color = "red") +
+    labs(title = paste("Cross Validation\nbest threshold =", thresholds[which.min(cvloss)]),
+         x = "pvalue threshold", y = "Loss")
+print(gp)
+```
+
+## Q2 Multiple Testing
+**The above model was a linear model. Now we simulate from a logistic model. Start with training data, $X_{nxp}$ where $n = 1000, p = 100$ and $X \sim N(0; \sigma^2I)$. Make the first 10 variables associated with the outcome Y, i.e.**
+
+$$logit(p(y)) = \alpha + x_1 \beta_1 + x_2 \beta_2 + \dots + x_{10} \beta_{10}$$
+
+**Set all $\beta s$ to 0.22 --- this corresponds to an OR of \sim 1.25. To simulate this model perform the following steps:**
+
+- `i` Generate your X variables 
+
+```{r}
+### Set parameters
+set.seed(0)
+N_TRAIN = 1000
+P       = 100
+SIGMA   = 10
+ALPHA   = 0
+### simulate data
+X_train = replicate(
+    N, 
+    rnorm(P, mean = 0, sd = SIGMA))
+X_train = t(X_train)
+colnames(X_train) = paste0("X", 1:P)
+```
+
+- `ii` set your $\beta$ values
+
+```{r}
+beta = c(rep(0.22, 10), rep(0, P-10)) 
+```
+
+- `iii` calculate your linear predictor, $X\beta$
+
+```{r}
+Y = (X_train %*% beta %>% as.vector) + ALPHA
+```
+
+
+- `iv` Take the $logit^{-1}$ to get your true probabilities, i.e. $\frac{\text{exp}(X\beta)}{1 + \text{exp}(X\beta)}$
+
+
+```{r}
+Yprob = exp(Y) / (1 + exp(Y))
+```
+
+
+- `v` Generate observed Y values by applying `rbinom(n, 1, Yprob)`
+
+```{r}
+Yobs = rbinom(N_TRAIN, 1, Yprob)
+```
+
+
+Using the full data, i.e. all 100 predictors:
+
+(a) Simulate the data and show your code
+
+The simulation and code is shown as above.
+
+(b) Calculate the univariate association Y and each X via a t-test. How many have a p-value < 0.1? How many would you expect? Look at the rank order of the p-values. Are the "true" associations always ranked above the "false" associations?
+
+
+Calculate the univariate association Y and each X via a t-test
+```{r}
+pval = apply(X_train, 2, function(x){t.test(x ~ Yobs)$p.value})
+```
+
+how many have a p-value < 0.1
+```{r}
+sum(pval < 0.1)
+```
+
+```{r}
+length(Yobs)
+```
+
+
+(c) Calculate a 2x2 table showing the True/False positives & True/False Negatives
+```{r}
+label_true = c(rep(T, 10), rep(F, P - 10))
+label_pred = pval < 0.1
+table(label_pred, lab_true)
+```
 
 
 # Part II.  Working with Data
+
+## Model Selection
+
+### Model Selection (a)
+**Return to HW #2 where you visually chose the best smoothing approach. Using natural cubic splines, perform 10-fold cross-validation to choose the optimal degrees of freedom. Show Code**
+
+
+import data
+```{r}
+### choose the first person
+filename <- "data-01"
+datadir  <- "~/GitRepo/Duke_BIOS707_ML/hw/PS2/Diabetes-Data"
+    
+### specify the type of each columns
+coltypes <- list(
+    col_date(format = "%m-%d-%Y"),
+    col_time(format = "%H:%M"),
+    col_integer(),
+    col_integer())
+
+### import data
+dat_raw <- read_delim(
+    file.path(datadir, filename), 
+    delim = "\t", 
+    col_names = FALSE,
+    col_types = coltypes) %>%
+    `colnames<-`(c("date", "time", "code", "value"))
+
+### observe
+head(dat_raw)
+```
+
+Select the 3 pre-meal blood glucose measurements (codes 58, 60, 62) and perform locf imputation
+
+- 58 = Pre-breakfast blood glucose measurement  
+- 60 = Pre-lunch blood glucose measurement  
+- 62 = Pre-supper blood glucose measurement  
+```{r}
+### initialization (set code_name)
+tmp <-  c("Pre-breakfast\nblood glucose measurement",
+          "Pre-lunch\nblood glucose measurement",  
+          "Pre-supper\nblood glucose measurement")
+
+tmp <-  data.frame(
+            code      = c(58, 60, 62), 
+            code_name = tmp)
+
+### get data with code 58, 60, 62 (pre-meal blood glucose measurements)
+df <- dat_raw
+df <- df %>% 
+    filter(code %in% c(58, 60, 62)) %>%
+    inner_join(., tmp, by = "code")
+
+### specify factor levels of code_name
+df$code_name <- factor(df$code_name, levels = tmp$code_name)
+
+### add datetime
+df <- df %>% mutate(datetime = paste(date, time))
+df$datetime <- parse_datetime(
+    df$datetime, 
+    format = "%Y-%m-%d %H:%M:%S")
+
+### store the tmp
+dat_datetime <- df
+
+### spread for imputation
+df <- dat_datetime
+df <- df %>% group_by(date, code_name) %>% summarize(Mean = mean(value))
+df <- df %>% spread(code_name, Mean)
+df <- df %>% na.locf(., na.rm = FALSE) 
+
+### arrange dataframe from wide to long formate
+dat_daily <- df %>% gather(measurement, value, -date) %>% na.omit
+head(dat_daily)
+```
+
+perform cross validation for degree of freedom in nature cubic spline
+```{r}
+### pvalue thresholds
+degs = seq(from = 1, to = 20, by = 2)
+dat  = dat_daily
+
+### create k fold
+K       = 10
+sp      = split(c(1:nrow(dat)), c(1:K))
+CVpreds = matrix(NA, nrow = nrow(dat), ncol = length(degs))
+
+### for each fold
+for(k in 1:K){
+    
+    ### specify train and test of x and y
+    dat_train <- dat[-sp[[k]],]
+    dat_test  <- dat[ sp[[k]],]
+    
+    ### for each threshold
+    for(i in 1:length(degs)) {
+        ### degree of freedom
+        deg = degs[i]
+        
+        ### fit the model with specific pvalue threshold
+        fit = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat_train)
+        CVpreds[sp[[k]], i] = predict(fit, dat_test, type = "response")
+    } # end inner loop
+} # end outer loop
+
+### get loss of cross validation
+cvloss = apply(CVpreds, 2, function(y_pred){mean((y_pred - dat_daily$value)^2)})
+
+### visualization
+gp = data.frame(
+    x = degs,
+    y = cvloss) %>%
+    ggplot(., aes(x = x, y = y)) +
+    geom_line() + geom_point() + theme_Publication() +
+    geom_vline(xintercept = degs[which.min(cvloss)], color = "red") +
+    labs(title = paste("Cross Validation\nbest degree of freedom =", degs[which.min(cvloss)]),
+         x = "degree of freedom", y = "Loss")
+print(gp)
+```
+
+### Model Selection (b)
+**Repeat using leave-one-out cross-validation. Do your results change?**
+
+```{r}
+### pvalue thresholds
+degs = seq(from = 1, to = 20, by = 2)
+dat  = dat_daily
+
+### create k fold
+K       = nrow(dat)
+sp      = split(c(1:nrow(dat)), c(1:K))
+CVpreds = matrix(NA, nrow = nrow(dat), ncol = length(degs))
+
+### for each fold
+for(k in 1:K){
+    
+    ### specify train and test of x and y
+    dat_train <- dat[-sp[[k]],]
+    dat_test  <- dat[ sp[[k]],]
+    
+    ### for each threshold
+    for(i in 1:length(degs)) {
+        ### degree of freedom
+        deg = degs[i]
+        
+        ### fit the model with specific pvalue threshold
+        fit = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat_train)
+        CVpreds[sp[[k]], i] = predict(fit, dat_test, type = "response")
+    } # end inner loop
+} # end outer loop
+
+### get loss of cross validation
+cvloss = apply(CVpreds, 2, function(y_pred){mean((y_pred - dat_daily$value)^2)})
+
+### visualization
+gp = data.frame(
+    x = degs,
+    y = cvloss) %>%
+    ggplot(., aes(x = x, y = y)) +
+    geom_line() + geom_point() + theme_Publication() +
+    geom_vline(xintercept = degs[which.min(cvloss)], color = "red") +
+    labs(title = paste("LOOCV\nbest degree of freedom =", degs[which.min(cvloss)]),
+         x = "degree of freedom", y = "Loss")
+print(gp)
+
+```
+
+The leave one out cross validation (degree of freedom = 11) does not agree the same answer to the cross validation (degree of freedom = 7).
+
+### Model Selection (c)
+**Pick the best model using AIC & BIC**
+
+```{r, fig.plot.height = 3, fig.plot.width = 3}
+###
+degs  = seq(from = 1, to = 20, by = 1)
+dat   = dat_daily
+xAIC  = rep(NA, length(degs))
+xBIC  = rep(NA, length(degs))
+
+###
+for (i in 1:length(degs)){
+    deg = degs[i]
+    fit = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat)
+    xAIC[i] = AIC(fit)
+    xBIC[i] = BIC(fit)
+}
+
+###
+gp = data.frame(deg = degs, aic = xAIC, bic = xBIC) %>% 
+    gather(metric, value, -deg) %>%
+    ggplot(., aes(x = deg, y = value, group = metric, color = metric)) +
+    geom_point() + 
+    labs(title = paste("AIB and BIC over the degree of freedom",  "\n",
+                       "Best df chosen by AIC:", which.min(xAIC), "\n",
+                       "Best df chosen by BIC:", which.min(xBIC)),
+         x = "degree of freedom")
+print(gp)
+```
+
+### Model Selection (d)
+** Use a likelihood ratio test**
+
+From the results, we can see that the pvalue of likelihood is significant when degree freedom is 1 and 2. Therefore, based on likelihood ratio test, I would choose the degree of freedom equals to 1.
+```{r}
+string = c()
+degs = seq(from = 1, to = 15, by = 1)
+
+for (i in 2:length(degs)){
+    deg1 = degs[i-1]
+    deg2 = degs[i]
+    
+    fit1 = lm(value ~ as.factor(measurement) * ns(date, df = deg1), data = dat)
+    fit2 = lm(value ~ as.factor(measurement) * ns(date, df = deg2), data = dat)
+    
+    res = lrtest(fit1, fit2)
+    string = paste(string, 
+                   "Df1:",   deg1, "vs",
+                   "Df2:",   deg2, 
+                   "=> Pvalue", round(res$`Pr(>Chisq)`[2], 3), "\n")
+} # end for loop
+
+cat(string)
+```
+
+### Model Selection (e)
+**Repeat by creating training and testing sets. Play around with the split size**  
+**Note: You can display your results in a single table indicating the optimal fit. Visualize some of your results**
+
+
+helper function to get the best degree of different method
+```{r}
+get_err = function(dat_train, dat_test, deg){
+    fit = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat_train)
+    ypred = predict(fit, dat_test)
+    return(mean((ypred - dat_test$value)^2))
+}
+
+get_dat_split = function(dat, prop, seed = 0){
+    ### initialization
+    set.seed(seed)
+    len = nrow(dat)
+    n_train = floor(len * prop)
+    
+    ### create index for dat in first and second dataset
+    idx = 1:len
+    idx_train = sample(idx, n_train)
+    idx_test  = idx[-idx_train]
+    
+    ### split dataset
+    out = list(
+        "train" = dat[idx_train,],
+        "test"  = dat[idx_test,]
+    )
+    return(out)
+}
+
+get_df_aic = function(dat, degs) {
+    x = rep(NA, length(degs))
+    for (i in 1:length(degs)) {
+        deg  = degs[i]
+        fit  = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat)
+        x[i] = AIC(fit)
+    } # end for loop
+    
+    return(degs[which.min(x)])
+}
+get_df_bic = function(dat, degs) {
+    x = rep(NA, length(degs))
+    for (i in 1:length(degs)) {
+        deg  = degs[i]
+        fit  = lm(value ~ as.factor(measurement) * ns(date, df = deg), data = dat)
+        x[i] = BIC(fit)
+    } # end for loop
+    return(degs[which.min(x)])
+}
+
+get_df_lrt = function(dat, degs) {
+    for (i in 2:length(degs)) {
+        ###
+        deg1 = degs[i-1]
+        deg2 = degs[i]
+        
+        ###
+        fit1 = lm(value ~ as.factor(measurement) * ns(date, df = deg1), data = dat)
+        fit2 = lm(value ~ as.factor(measurement) * ns(date, df = deg2), data = dat)
+        
+        ###
+        pval = round(res$`Pr(>Chisq)`[2], 3)
+        if (pval > 0.05){
+            return(deg1)
+        } # end if
+        
+    } # end loop
+    return(degs[length(degs)])
+}
+
+### toggle to test each functions
+#get_dat_split(data.frame(1:10), 0.5, 1)
+#get_df_aic(dat_daily, degs)
+#get_df_bic(dat_daily, degs)
+#get_df_lrt(dat_daily, degs)
+```
+
+
+perform different methods to find best degree of freedom and test error under different split proportion
+```{r}
+### set parameters
+seed  = 0
+props = seq(from = 0.2, to = 0.9, by = 0.1)
+degs  = seq(from = 1,   to = 10,   by = 1)
+dat   = dat_daily
+
+### intialization
+res_aic = data.frame(
+    prop = props,
+    deg  = rep(NA, length(props)),
+    err  = rep(NA, length(props)))
+    
+res_bic = data.frame(
+    prop = props,
+    deg  = rep(NA, length(props)),
+    err  = rep(NA, length(props)))
+
+res_lrt = data.frame(
+    prop = props,
+    deg  = rep(NA, length(props)),
+    err  = rep(NA, length(props)))
+
+### play on split and get degree/error based on different methods
+for (idx in 1:length(props)) {
+    ### split train and test
+    prop = props[idx]
+    lst  = get_dat_split(dat, prop, seed = seed)
+    dat_train = lst$train
+    dat_test  = lst$test
+   
+    ### choose degree of freedom based on different methods
+    # AIC
+    deg = get_df_aic(dat_train, degs) 
+    err = get_err(dat_train, dat_test, deg = deg)
+    res_aic$deg[idx] = deg
+    res_aic$err[idx] = err
+    
+    # BIC
+    deg = get_df_bic(dat_train, degs) 
+    err = get_err(dat_train, dat_test, deg = deg)
+    res_bic$deg[idx] = deg
+    res_bic$err[idx] = err
+    
+    # Likelihood
+    deg = get_df_aic(dat_train, degs) 
+    err = get_err(dat_train, dat_test, deg = deg)
+    res_lrt$deg[idx] = deg
+    res_lrt$err[idx] = err
+}
+
+### summarization and combine the results
+res_aic$method = "AIC"
+res_bic$method = "BIC"
+res_lrt$method = "Likelihood"
+res = bind_rows(res_aic, res_bic, res_lrt)
+res$deg = as.character(res$deg)
+
+colnames(res) = c("proportion_train_data","degree_of_freedom", "test_error", "Method")
+print(res)
+```
+
+
+The following figure shows that AIC and likelihood reach to the same results under different proportion of training data, while the results is more robust in BIC.
+```{r}
+gp = ggplot(res, aes(x = Method, y = proportion_train_data, fill = degree_of_freedom)) + 
+    geom_tile() +
+    labs(title = "Best Degree of freedom chosen\nunder different proportion of training data")
+print(gp)
+```
+
+The following figure shows that the test error decrease when increasing the proportion in training data.
+```{r}
+gp = ggplot(res, aes(x = Method, y = proportion_train_data, fill = test_error)) + 
+    geom_tile() +
+    labs(title = "Test Error of model\nunder different proportion of training data")
+print(gp)
+```
+
+
+
+## Bootstrapping
+Bootstrapping is most useful when we don’t have an analytic means to estimate our standard errors. We will consider estimating a confidence interval for a ratio of two random variables: E[X/Y] . There is no closed form solution for this. Using the imputed mouse data from HW3 choose the protein DYRK1A_N
+
+import and arrange data
+```{r}
+### import
+dat_mice = read_csv("~/GitRepo/Duke_BIOS707_ML/hw/PS3/Data_Cortex_Nuclear.csv")
+dat      = dat_mice %>% na.omit
+
+### seperate phenodata and exprs
+idx = c("MouseID", "Genotype", "Treatment", "Behavior", "class")
+dat_pheno = dat %>% select(idx)
+dat_exprs = dat %>% select(-idx)
+
+### imputation
+single_mean_impute = function(dat){
+    dat_imputed = lapply(dat, function(x){
+        mu = mean(x, na.rm = TRUE)
+        x[is.na(x)] = mu
+        return(x)
+    })
+    return(do.call(cbind, dat_imputed))
+} # end func
+dat_exprs = single_mean_impute(dat_exprs) %>% as.tibble
+```
+
+
+### Boostrapping (a)
+**Pick the protein that is most highly correlated with (via r2). Indicate which protein you picked and the empirical correlation. Calculate the mean of the ratio of the two proteins**
+
+find the protein with max correlation
+```{r}
+dat   = dat_exprs %>% select(-DYRK1A_N)
+y     = dat_exprs$DYRK1A_N
+pname = apply(dat, 2, function(x){r = cor(x, y); return(r^2)}) %>% which.max %>% names
+print(pname)
+```
+
+the correlation of the two proteins
+```{r}
+x = dat_exprs$DYRK1A_N %>% as.numeric
+y = dat_exprs$pERK_N   %>% as.numeric
+cor(x, y)
+```
+
+
+the mean ratio of the two proteins
+```{r}
+mean(x / y)
+```
+
+### bootstrap (b)
+**Generate 500 bootstraps of the mean of the ratio. Show your code. Plot your bootstrap distribution. Does it appear that your distribution has converged to normality? If not do more replications**
+
+helper function for boostrapping
+```{r, echo = FALSE}
+myBoot <- function(data, B, func, seed = 1234){
+    set.seed(seed)
+    tboot <- replicate(B, func(sample(data,replace = T)))
+    return(tboot)
+}
+
+myBoot_df <- function(df, B, func, seed = 1234){
+    set.seed(seed)
+    
+    tboot = lapply(1:B, function(dummpy){
+        idx = sample(1:nrow(df), replace = T)
+        res = func(df[idx, ])
+        return(res)
+    })
+    return(tboot)
+}
+
+
+bootSE <- function(data, B, func, seed = 1234){
+    tboot <- myBoot(data,B, func,seed)
+    se <- sd(tboot)
+    return(se)
+}
+
+
+bootCI <- function(data, B, func, ci, method, seed = 123){ 
+    tboot <- myBoot(data,B, func,seed) 
+    qs <- c((1 - ci)/2, 1 - (1 - ci)/2)
+    if (method == "Perc") {
+        CI <- quantile(tboot, p = qs) 
+    } else if (method == "SE") {
+        se <- sd(tboot) 
+        CI <- c(func(data) - qnorm(qs[2])*se, func(data) + qnorm(qs[2])*se )
+    } else {
+        print("Invalid Method") 
+        return(NA)
+    }
+    return(CI) 
+}
+
+bootCI_df <- function(data, B, func, ci, method, seed = 123){ 
+    tboot <- myBoot_df(data, B, func,seed) %>% as.numeric
+    qs <- c((1 - ci)/2, 1 - (1 - ci)/2)
+    if (method == "Perc") {
+        CI <- quantile(tboot, p = qs) 
+    } else if (method == "SE") {
+        se <- sd(tboot) 
+        CI <- c(func(data) - qnorm(qs[2])*se, func(data) + qnorm(qs[2])*se )
+    } else {
+        print("Invalid Method") 
+        return(NA)
+    }
+    return(CI) 
+}
+
+```
+
+perform bootstrap and observe the qqplot of the distribution and standard normal
+```{r}
+df = data.frame(
+    x = dat_exprs$DYRK1A_N %>% as.numeric,
+    y = dat_exprs$pERK_N   %>% as.numeric)
+
+res = myBoot_df(df, 500, function(dat){mean(as.numeric(dat$x) / as.numeric(dat$y))})
+res = as.numeric(res)
+qqnorm(res)
+qqline(res, col = "red")
+```
+
+Based on the qq-plot against standard normal distribution, the results show that the sample distribution from bootstrap is similar to a normal distribution.
+
+### bootstrap (c)
+**Use the sd method and the percentile methods to calculate the 95% confidence intervals. How do they differ?**
+
+define function in bootstrap
+```{r}
+fun = function(dat){mean(as.numeric(dat$x) / as.numeric(dat$y))}
+```
+
+95% CI with sd method
+```{r}
+bootCI_df(df, 500, fun, .95, "SE")
+```
+
+95% CI with percentile method
+```{r}
+bootCI_df(df, 500, fun, .95, "Perc")
+```
+
+It turns out at 500 bootstrap, the 95% CI is very similar between sd method and percentile method.
+
+### bootstrap (d)
+**This time pick a protein with very low (absolute) correlation. Calculate the confidence intervals as above.**
+
+find the protein with max correlation
+```{r}
+dat   = dat_exprs %>% select(-DYRK1A_N)
+y     = dat_exprs$DYRK1A_N
+pname = apply(dat, 2, function(x){r = cor(x, y); return(r^2)}) %>% which.min %>% names
+print(pname)
+```
+
+store the results
+```{r}
+df = data.frame(
+    x = dat_exprs$DYRK1A_N %>% as.numeric,
+    y = dat_exprs$AKT_N    %>% as.numeric)
+```
+
+95% CI with sd method
+```{r}
+bootCI_df(df, 500, fun, .95, "SE")
+```
+
+95% CI with percentile method
+```{r}
+bootCI_df(df, 500, fun, .95, "Perc")
+```
+
+As the same as above, the 95% CI is very similar between sd method and percentile method under 500 bootstrap
+
+### bootstrap (e)
+**How do the size of the confidence intervals differ? Pick some additional proteins to draw some conclusions about the relationship between the variance of the ratio and the correlation of the variables**
+
+### bootstrap (f)
+**taylor expansion**
+
+
+## Bootstrap Bias Correction
+**One important way of using the bootstrap is to correct for optimism in your prediction model. We can use this procedure for any performance metric. The general idea is that we fit and evaluate our model within our full data. Then we fit the model within a bootstrap sample of the data and test the model performance in the original sample. The difference in the performance is considered the optimism of the model and this is added to the original performance metric. We will assess the optimism corrected bootstrap with the Liver Data from class.**
+
+**Pre-processing:As in class read in the data and drop the 4 observations with missing values. Perform the following steps:**
+
+```{r}
+LIVER <- read.table(url("https://archive.ics.uci.edu/ml/machine-learning-databases/00225/Indian%20Liver%20Patient%20Dataset%20(ILPD).csv"), sep = ",")
+names(LIVER) <- c("Age", "Gender", "TotBili","DirectBili","ALK","AAP","AAP2","TP","ALB","AGRatio","Disease")
+Liver <- na.omit(LIVER)
+Liver$Disease <- factor(Liver$Disease, levels = c(2,1), labels = c("Not Diseased", "Diseased"))
+```
+
+
+### Bootstrap Bias Correction (a)
+**Fit a logistic regression, regressing Disease status onto the 10 clinical variables**
+```{r}
+fit_ori <- glm(Disease ~ TotBili + DirectBili + ALK + AAP + AAP2 + TP + ALB + AGRatio + Gender + Age, family = "binomial", data = Liver)
+```
+
+### Bootstrap Bias Correction (b)
+**Calculate squared-error loss**
+```{r}
+logisticLoss <- function(pred,obs){
+  loss <- ifelse(obs == 1, 
+         log(1 + exp(-pred*obs)),
+         log(1 + exp(-(1-pred)*(1-obs))))
+  return(loss)
+}
+```
+
+```{r}
+lLog <- logisticLoss(
+    predict(fit_ori, type = "response"), 
+    as.numeric(Liver$Disease) - 1)
+loss_ori = mean(lLog)
+print(loss_ori)
+```
+
+### Bootstrap Bias Correction (c)
+**Select a bootstrap sample of the data and re-fit the model on the bootstrap sample**
+```{r}
+df  = Liver
+idx = sample(1:nrow(df), replace = T)
+dat = df[idx, ]
+
+fit_boots <- glm(Disease ~ TotBili + DirectBili + ALK + AAP + AAP2 + TP + ALB + AGRatio + Gender + Age, family = "binomial", data = dat)
+```
+
+### Bootstrap Bias Correction (d)
+**Generate predicted values using the original data**
+```{r}
+lLog <- logisticLoss(
+    predict(fit_boots, type = "response"), 
+    as.numeric(Liver$Disease) - 1)
+loss_boots = mean(lLog)
+```
+
+### Bootstrap Bias Correction (f)
+**Calculate the optimism for iteration i**
+```{r}
+loss_boots - loss_ori
+```
+
+
+### Bootstrap Bias Correction (g)
+**Repeat (c) - (f) 100 times**
+```{r}
+### original data
+df  = Liver
+lLog <- logisticLoss(
+    predict(fit_ori, type = "response"), 
+    as.numeric(Liver$Disease) - 1)
+loss_ori = mean(lLog)
+
+### bootstrap
+xOpt = rep(NA, 100)
+xOpt_mu = c()
+
+for (i in 1:100){
+    ### bootstrap sample
+    idx = sample(1:nrow(df), replace = T)
+    dat = df[idx, ]
+
+    ### fit model on boostrap sample
+    fit_boots <- glm(
+        Disease ~ TotBili + DirectBili + ALK + AAP + AAP2 + TP + ALB + AGRatio + Gender + Age, 
+        family = "binomial", data = dat)
+
+    ### loss of bootstrap sample
+    lLog <- logisticLoss(
+        predict(fit_boots, type = "response"), 
+        as.numeric(Liver$Disease) - 1)
+
+    loss_boots = mean(lLog)
+    xOpt[i] = loss_boots - loss_ori
+    xOpt_mu = c(xOpt_mu, mean(xOpt, na.rm = TRUE))
+}
+```
+
+### Bootstrap Bias Correction (h)
+**The bias corrected loss is: (b) + mean(opt)**
+
+**Plot your cumulative average for the optimism versus iteration. Did your optimism converge? If not do more iterations. How many iterations were necessary? What is your average optimism**
+```{r}
+plot(xOpt_mu, pch = 20, xlab = "iteration", ylab = "mean of optimism")
+```
+
+**Report what your bias-corrected loss should be**
+```{r}
+loss_ori + mean(xOpt)
+```
+
+**Repeat the above, but increase the complexity of your model: include squared terms for all of the labs values. How do your results differ?**
+```{r}
+### original data
+df  = Liver
+fun_str = "Disease ~ TotBili + DirectBili + ALK + AAP + AAP2 + TP + ALB + AGRatio + Gender + Age + TotBili + I(DirectBili)^2 + I(ALK)^2 + I(AAP)^2 + I(AAP2)^2 + I(TP)^2 + I(ALB)^2 + I(AGRatio)^2 + I(Gender)^2 + I(Age)^2"
+fit_ori <- glm(as.formula(fun_str), family = "binomial", data = Liver)
+
+lLog <- logisticLoss(
+    predict(fit_ori, type = "response"), 
+    as.numeric(Liver$Disease) - 1)
+loss_ori = mean(lLog)
+
+### bootstrap
+xOpt = rep(NA, 100)
+xOpt_mu = c()
+
+for (i in 1:100){
+    ### bootstrap sample
+    idx = sample(1:nrow(df), replace = T)
+    dat = df[idx, ]
+
+    ### fit model on boostrap sample
+    fit_boots <- glm(
+        as.formula(fun_str), 
+        family = "binomial", data = dat)
+
+    ### loss of bootstrap sample
+    lLog <- logisticLoss(
+        predict(fit_boots, type = "response"), 
+        as.numeric(Liver$Disease) - 1)
+
+    loss_boots = mean(lLog)
+    xOpt[i] = loss_boots - loss_ori
+    xOpt_mu = c(xOpt_mu, mean(xOpt, na.rm = TRUE))
+}
+
+```
+
+```{r}
+plot(xOpt_mu, pch = 20, xlab = "iteration", ylab = "mean of optimism")
+```
+
+```{r}
+loss_ori + mean(xOpt)
+```
+
+from the plot and the results, the increase of complexity does not reduce the bias corrected loss.
+
+
+**Use 10 fold cross-validation to calculate your loss. How does this compare to the bias-corrected loss.**
+```{r}
+###
+df      = Liver
+K       = 10
+sp      = split(c(1:nrow(df)), c(1:K))
+CVpreds = rep(NA, nrow(df))
+
+### for each fold
+for(k in 1:K){
+    
+    ### specify train and test of x and y
+    dat_train <- df[-sp[[k]],]
+    dat_test  <- df[ sp[[k]],]
+    
+    ### get pvalue of correlation
+    fun_str = "Disease ~ TotBili + DirectBili + ALK + AAP + AAP2 + TP + ALB + AGRatio + Gender + Age + TotBili"
+    fit <- glm(as.formula(fun_str), family = "binomial", data = dat_train)
+    CVpreds[sp[[k]]] <- predict(fit, newdata = dat_test, type = "response")
+    
+} # end loop
+
+
+### get loss of cross validation
+cvloss = mean(logisticLoss(CVpreds, as.numeric(Liver$Disease) - 1))
+print(cvloss)
+```
+
+the cv loss is similar to bias correlation bias
