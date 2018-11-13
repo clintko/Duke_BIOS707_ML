@@ -1,0 +1,44 @@
+---
+title: "Fit the model with highly correlated covariates"
+output: html_notebook
+---
+
+# About the notebook
+
+Assum there are three variables x1, x2, and x3. If x1 is correlated to x2, what will happen to the coefficients? Will the weights of x3 become the highest?
+
+# simulate x1 x2 x3 and y
+```{r}
+###
+set.seed(0)
+N  = 100
+SD = 10
+
+###
+x1 = rnorm(N, mean = 0, sd = SD)
+x2 = x1 + rnorm(N)
+x3 = rnorm(N, mean = 0, sd = SD)
+
+###
+y = 0.9 * x1 + 0.5 * x2 + 1.2 * x3 + rnorm(N)
+```
+
+calculate the correlation of each x1, x2, x3 with the outcome y to make sure the marginal correlation of covariates with outcome y is similar
+```{r}
+print(cor(y, x1))
+print(cor(y, x2))
+print(cor(y, x3))
+```
+
+
+# Fit the model
+```{r}
+fit =lm(y ~ x1 + x2 + x3)
+coef(fit)
+```
+
+
+My Question: 
+- First, it turns out the coefficient of x1 and x2 is the same as the real model. But since x1 and x2 are highly correlated, shouldn't the coefficients be very dissimilar to the real one.
+- Second, it turns out the correlation of x3 does not become much bigger even though it is the only unique covariates among the x1, x2 and x3.
+
