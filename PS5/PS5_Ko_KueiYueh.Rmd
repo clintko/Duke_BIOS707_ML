@@ -1003,8 +1003,6 @@ preprocess_mouse_exprs = function(dat_mice){
 
 ### help function to perform transformation, imputation and prediction
 fun_predict_kk319 = function(dat_test) {
-    if (!require("tidyverse")) install.packages("tidyverse")
-    if (!require("randomForest")) install.packages("randomForest")
     require(tidyverse)
     require(randomForest)
     
