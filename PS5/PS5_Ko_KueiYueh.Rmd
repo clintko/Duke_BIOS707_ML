@@ -950,7 +950,7 @@ x   = dat_train
 y   = y_train
 dat = as.data.frame(cbind(y, x))
 
-fit_train = randomForest(
+fit_MouseData = randomForest(
             factor(y) ~ ., 
             data       = dat, 
             importance = T, 
@@ -1002,12 +1002,12 @@ preprocess_mouse_exprs = function(dat_mice){
 }
 
 ### help function to perform transformation, imputation and prediction
-fun_predict_kk319 = function(dat_test) {
+fun_predict_kk319 = function(dat_test, model = fit_MouseData) {
     require(tidyverse)
     require(randomForest)
     
     dat = preprocess_mouse_exprs(dat_test)
-    yhat = predict(fit_train, newdata = data.frame(dat))
+    yhat = predict(model, newdata = data.frame(dat))
     yhat = as.numeric(yhat) - 1
    return(yhat)
 } # end func
@@ -1018,6 +1018,9 @@ sum((y_test - fun_predict_kk319(MouseData.Test))^2)
 
 save the objects
 ```{r}
-save(MouseData.Test, single_mean_impute, preprocess_mouse_exprs, fun_predict_kk319, file = "fun_predict_kk319.RData")
+save(fit_MouseData, MouseData.Test, 
+     single_mean_impute, preprocess_mouse_exprs, 
+     fun_predict_kk319, 
+     file = "fun_predict_kk319.RData")
 ```
 
