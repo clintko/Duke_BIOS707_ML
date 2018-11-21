@@ -1018,6 +1018,6 @@ sum((y_test - fun_predict_kk319(MouseData.Test))^2)
 
 save the objects
 ```{r}
-save(single_mean_impute, preprocess_mouse_exprs, fun_predict_kk319, file = "fun_predict_kk319.RData")
+save(MouseData.Test, single_mean_impute, preprocess_mouse_exprs, fun_predict_kk319, file = "fun_predict_kk319.RData")
 ```
 
